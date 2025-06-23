@@ -1,5 +1,7 @@
 const { google } = require("googleapis");
-const credentials = require("./credentials.json");
+
+// 🔁 改為從環境變數中讀取 JSON 字串
+const credentials = JSON.parse(process.env.CREDENTIALS_JSON);
 
 const auth = new google.auth.GoogleAuth({
   credentials,
@@ -28,10 +30,9 @@ async function logToSheet({
   const authClient = await auth.getClient();
   const sheets = google.sheets({ version: "v4", auth: authClient });
 
-  // 1️⃣ 如果已知 rowIndex → 直接更新
   if (cachedRowMap[requestId]) {
     const rowIndex = cachedRowMap[requestId];
-    const updateRange = `${SHEET_NAME}!M${rowIndex + 1}`; // Status is column M (13th)
+    const updateRange = `${SHEET_NAME}!M${rowIndex + 1}`;
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: updateRange,
@@ -42,7 +43,6 @@ async function logToSheet({
     return;
   }
 
-  // 2️⃣ 嘗試尋找相同 requestId
   const readRange = `${SHEET_NAME}!A2:A`;
   const result = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
@@ -53,7 +53,7 @@ async function logToSheet({
   let foundRow = null;
   for (let i = 0; i < rows.length; i++) {
     if (rows[i][0] === requestId.toString()) {
-      foundRow = i + 1; // offset for header
+      foundRow = i + 1;
       break;
     }
   }
