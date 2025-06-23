@@ -410,6 +410,10 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
 
   const { robotModel, robotId, classification, content, why, docs, channel, inform, approvers } = record;
 
+  if (pendingApprovals[requestId]) {
+    pendingApprovals[requestId].docConfirmed = true;
+  }
+
   // ✅ 轉換 UserID → Display name
   const userNames = await getUsernamesFromIds([userId], client);
   const userDisplayName = userNames[userId] || userId;
@@ -535,6 +539,26 @@ async function checkFinalDecision(requestId, client) {
           }
         ]
       });
+
+      // 🕒 24 小時後提醒 submitter 若尚未確認文件更新
+      setTimeout(async () => {
+        try {
+          const recordStillExists = pendingApprovals[requestId];
+          if (!recordStillExists) return;
+          if (recordStillExists.docConfirmed) return; // 已確認就不提醒
+
+          const imReminder = await client.conversations.open({ users: submitter });
+          await client.chat.postMessage({
+            channel: imReminder.channel.id,
+            text: `⏰ Reminder: Please confirm the documentation has been updated for your approved change request *${requestId}*. Click the button in the previous message if you have already done so.`
+          });
+
+          console.log(`⏰ Reminder sent to submitter <@${submitter}> for doc update (requestId: ${requestId})`);
+        } catch (err) {
+          console.error(`❌ Doc update reminder failed for requestId ${requestId}:`, err);
+        }
+      }, 1000 * 60 * 0.5); // ⚠️ 測試用 0.5 分鐘，正式請用 1000 * 60 * 60 * 24
+
 
       // 記錄到 spreadsheet
       await logToSheet({
