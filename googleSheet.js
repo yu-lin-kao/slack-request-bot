@@ -1,5 +1,11 @@
 const { google } = require("googleapis");
 
+if (!process.env.CREDENTIALS_JSON) {
+  console.error("🚨 CREDENTIALS_JSON is undefined");
+  process.exit(1);
+}
+
+
 // 🔁 改為從環境變數中讀取 JSON 字串
 const credentials = JSON.parse(process.env.CREDENTIALS_JSON);
 
