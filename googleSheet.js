@@ -7,7 +7,16 @@ if (!process.env.CREDENTIALS_JSON) {
 
 
 // 🔁 改為從環境變數中讀取 JSON 字串
-const credentials = JSON.parse(process.env.CREDENTIALS_JSON);
+const fs = require("fs");
+const path = "/etc/secrets/CREDENTIALS_JSON";
+
+if (!fs.existsSync(path)) {
+  console.error("❌ CREDENTIALS_JSON file not found at", path);
+  process.exit(1);
+}
+
+const raw = fs.readFileSync(path, "utf8");
+const credentials = JSON.parse(raw);
 
 const auth = new google.auth.GoogleAuth({
   credentials,

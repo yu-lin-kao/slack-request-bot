@@ -7,7 +7,16 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
 }
 
 // 🔁 從環境變數中讀取並轉成 JSON
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+const fs = require("fs");
+const firebasePath = "/etc/secrets/FIREBASE_SERVICE_ACCOUNT_JSON";
+
+if (!fs.existsSync(firebasePath)) {
+  console.error("❌ FIREBASE_SERVICE_ACCOUNT_JSON not found");
+  process.exit(1);
+}
+
+const rawFirebase = fs.readFileSync(firebasePath, "utf8");
+const serviceAccount = JSON.parse(rawFirebase);
 
 initializeApp({
   credential: cert(serviceAccount),
