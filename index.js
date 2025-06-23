@@ -592,7 +592,6 @@ async function getUsernamesFromIds(userIds, client) {
   return nameMap;
 }
 
-
 (async () => {
   await app.start(3000);
   console.log("⚡️ Slack Bot is running");
