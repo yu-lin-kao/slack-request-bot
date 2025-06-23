@@ -1,8 +1,7 @@
 const fs = require("fs");
 const { google } = require("googleapis");
 
-// 讀取 secret file，而不是 process.env
-const path = "/etc/secrets/CREDENTIALS_JSON";
+const path = process.env.CREDENTIALS_JSON || "/etc/secrets/CREDENTIALS_JSON";
 
 if (!fs.existsSync(path)) {
   console.error("❌ CREDENTIALS_JSON file not found at", path);
@@ -20,7 +19,7 @@ const auth = new google.auth.GoogleAuth({
 const SPREADSHEET_ID = "1JR0r4esk6C8Z4uqah3lIabdIEViZdqQNzf457lMADjw";
 const SHEET_NAME = "Sheet1";
 
-let cachedRowMap = {};
+let cachedRowMap = {}; // { requestId: rowIndex }
 
 async function logToSheet({
   requestId,

@@ -2,7 +2,7 @@ const fs = require("fs");
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 
-const path = "/etc/secrets/FIREBASE_SERVICE_ACCOUNT_JSON";
+const path = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || "/etc/secrets/FIREBASE_SERVICE_ACCOUNT_JSON";
 
 if (!fs.existsSync(path)) {
   console.error("❌ FIREBASE_SERVICE_ACCOUNT_JSON file not found at", path);
