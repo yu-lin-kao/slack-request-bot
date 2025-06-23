@@ -1,5 +1,6 @@
 const fs = require("fs");
 const { google } = require("googleapis");
+const { DateTime } = require("luxon");
 
 const path = process.env.CREDENTIALS_JSON || "/etc/secrets/CREDENTIALS_JSON";
 
@@ -77,7 +78,7 @@ async function logToSheet({
     });
     console.log(`🔄 Status updated for existing requestId in row ${foundRow}`);
   } else {
-    const date = new Date().toLocaleString();
+    const date = DateTime.now().setZone("America/Chicago").toFormat("yyyy-MM-dd HH:mm:ss");
     const row = [
       requestId,
       robotModel,
