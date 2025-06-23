@@ -1,10 +1,11 @@
-// firebase.js
-const { initializeApp, applicationDefault, cert } = require("firebase-admin/app");
+const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
-const serviceAccount = require("./firebaseServiceAccount.json");
+
+// 🔁 從環境變數中讀取並轉成 JSON
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
 
 initializeApp({
-  credential: cert(serviceAccount)
+  credential: cert(serviceAccount),
 });
 
 const db = getFirestore();
