@@ -1,4 +1,5 @@
 require("dotenv").config();
+const { DateTime } = require("luxon");
 const { App, ExpressReceiver } = require("@slack/bolt");
 
 // ✅ 先定義 receiver
@@ -246,6 +247,8 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
     thread_ts
   };
 
+  const dtChicago = DateTime.now().setZone("America/Chicago");
+
   // 🔥 Firestore 紀錄初始狀態
   await saveRequestToFirestore(requestId, {
     robotModel,
@@ -259,10 +262,8 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
     docs,
     submitter,
     channel,
-    submittedAt: new Date().toLocaleString("en-US", {
-      timeZone: "America/Chicago",
-      hour12: false
-    }),
+    submittedAt: dtChicago.toFormat("yyyy-MM-dd HH:mm:ss"),
+    submittedAt_raw: dtChicago.toISO(), // optional for spreadsheet sort/filter
     status: "🕒 Pending Approval",
     thread_ts
   });
