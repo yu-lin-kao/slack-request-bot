@@ -12,3 +12,7 @@ services:
         sync: false
       - key: SLACK_SIGNING_SECRET
         sync: false
+      - key: CREDENTIALS_JSON
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
