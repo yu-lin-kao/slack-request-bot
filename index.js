@@ -1,8 +1,15 @@
 require("dotenv").config();
 const { App, ExpressReceiver } = require("@slack/bolt");
 
+// ✅ 先定義 receiver
+const receiver = new ExpressReceiver({
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
+});
+
+// ✅ 再從 receiver 取得 express app
 const appExpress = receiver.app;
 
+// ✅ 加入 Render ping 用的 endpoint
 appExpress.get("/", (req, res) => {
   res.status(200).send("🛰️ Change Request Bot is running.");
 });
@@ -13,6 +20,7 @@ const { saveRequestToFirestore, updateStatusInFirestore } = require('./firestore
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
+  receiver: receiver
 });
 
 app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
