@@ -1,13 +1,7 @@
+const fs = require("fs");
 const { google } = require("googleapis");
 
-if (!process.env.CREDENTIALS_JSON) {
-  console.error("🚨 CREDENTIALS_JSON is undefined");
-  process.exit(1);
-}
-
-
-// 🔁 改為從環境變數中讀取 JSON 字串
-const fs = require("fs");
+// 讀取 secret file，而不是 process.env
 const path = "/etc/secrets/CREDENTIALS_JSON";
 
 if (!fs.existsSync(path)) {
@@ -26,7 +20,7 @@ const auth = new google.auth.GoogleAuth({
 const SPREADSHEET_ID = "1JR0r4esk6C8Z4uqah3lIabdIEViZdqQNzf457lMADjw";
 const SHEET_NAME = "Sheet1";
 
-let cachedRowMap = {}; // { requestId: rowIndex }
+let cachedRowMap = {};
 
 async function logToSheet({
   requestId,
