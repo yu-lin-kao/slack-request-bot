@@ -1,5 +1,12 @@
 require("dotenv").config();
-const { App } = require("@slack/bolt");
+const { App, ExpressReceiver } = require("@slack/bolt");
+
+const appExpress = receiver.app;
+
+appExpress.get("/", (req, res) => {
+  res.status(200).send("🛰️ Change Request Bot is running.");
+});
+
 const { logToSheet } = require('./googleSheet');
 const { saveRequestToFirestore, updateStatusInFirestore } = require('./firestoreLog');
 
