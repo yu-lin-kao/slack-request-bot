@@ -259,7 +259,10 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
     docs,
     submitter,
     channel,
-    submittedAt: new Date().toISOString(),
+    submittedAt: new Date().toLocaleString("en-US", {
+      timeZone: "America/Chicago",
+      hour12: false
+    }),
     status: "🕒 Pending Approval",
     thread_ts
   });
