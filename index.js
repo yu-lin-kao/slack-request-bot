@@ -175,95 +175,29 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
 
   const requestId = Date.now(); // 用於記錄審核狀態
 
-  const blocks = [
-    {
-      type: "rich_text",
-      elements: [
-        {
-          type: "rich_text_section",
-          elements: [
-            { type: "text", text: `Hi! Here's a request submitted by ` },
-            { type: "user", user_id: submitter },
-            { type: "text", text: "!\n" }
-          ]
-        },
-        {
-          type: "rich_text_section",
-          elements: [
-            ...approvers.concat(inform).flatMap((id, i, arr) => [
-              { type: "user", user_id: id },
-              ...(i < arr.length - 1 ? [{ type: "text", text: ", " }] : [])
-            ]),
-            { type: "text", text: " — please kindly look through it and respond accordingly.\n" }
-          ]
-        },
-        {
-          type: "rich_text_list",
-          style: "bullet",
-          elements: [
-            {
-              type: "rich_text_section",
-              elements: [
-                { type: "text", text: "Robot Model (with ID): ", style: "bold" },
-                { type: "text", text: `${robotModel}${robotId ? ` (${robotId})` : ""}` }
-              ]
-            },
-            {
-              type: "rich_text_section",
-              elements: [
-                { type: "text", text: "Request Classification: ", style: "bold" },
-                { type: "text", text: classification }
-              ]
-            },
-            {
-              type: "rich_text_section",
-              elements: [
-                { type: "text", text: "Request Content: ", style: "bold" },
-                { type: "text", text: content }
-              ]
-            },
-            {
-              type: "rich_text_section",
-              elements: [
-                { type: "text", text: "Why this change is needed: ", style: "bold" },
-                { type: "text", text: why }
-              ]
-            },
-            {
-              type: "rich_text_section",
-              elements: [
-                { type: "text", text: "People to Approve: ", style: "bold" },
-                ...approvers.flatMap((id, i, arr) => [
-                  { type: "user", user_id: id },
-                  ...(i < arr.length - 1 ? [{ type: "text", text: ", " }] : [])
-                ])
-              ]
-            },
-            {
-              type: "rich_text_section",
-              elements: [
-                { type: "text", text: "Related Documentation: ", style: "bold" },
-                { type: "text", text: docs || "None" }
-              ]
-            }
-          ]
-        },
-        {
-          type: "rich_text_section",
-          elements: [
-            { type: "text", text: "\nResult and updates will be recorded in this thread. Please also feel free to discuss here. Thank you!", style: "italic" }
-          ]
-        }
-      ]
-    }
-  ];
-
-
   // 1️⃣ 發 summary 到頻道（沒有按鈕）
   const posted = await client.chat.postMessage({
     channel: channel,
     text: `*🔧 New Change Request Submitted*`,
-    blocks: blocks
+    blocks: [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `Hi! Here's a request submitted by <@${submitter}>!
+        ${approvers.concat(inform).map(u => `<@${u}>`).join(", ")} *Please kindly look through it and respond accordingly.*
+
+  - *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
+  - *Request Classification*: ${classification}
+  - *Request Content*: ${content}
+  - *Why this change is needed*: ${why}
+  - *People to Approve*: ${approvers.map(u => `<@${u}>`).join(", ")}
+  - *Related Documentation*: ${docs || "None"}
+
+  Result and updates will be recorded in this thread. Please also feel free to discuss in thread. Thank you!!`
+        }
+      }
+    ]
   });
 
   const thread_ts = posted.ts;
