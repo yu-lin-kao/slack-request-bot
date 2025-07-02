@@ -213,7 +213,15 @@ Result and updates will be recorded in this thread. Please also feel free to dis
           type: "section",
           text: {
             type: "mrkdwn",
-            text: `*Robot*: ${robotModel}${robotId ? ` (${robotId})` : ""}\n*Classification*: ${classification}\n*Content*: ${content}\n*Why*: ${why}\n*Docs*: ${docs || "None"}`
+            text: `Hi! You have a request from <@${submitter}> to review! 
+
+ •  *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
+ •  *Request Classification*: ${classification}
+ •  *Request Content*: ${content}
+ •  *Why this change is needed*: ${why}
+ •  *Related Documentation*: ${docs || "None"}
+
+Please kindly approve or decline. If there's any further discussion or points you would like to raise, please feel free to reply in the channel thread. Thank you!!`
           }
         },
         {
