@@ -186,12 +186,12 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
           type: "mrkdwn",
           text: `Hi! Here's a request submitted by <@${submitter}>! ${approvers.concat(inform).map(u => `<@${u}>`).join(", ")} *Please kindly look through it and respond accordingly.*
 
-•  *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
-•  *Request Classification*: ${classification}
-•  *Request Content*: ${content}
-•  *Why this change is needed*: ${why}
-•  *People to Approve*: ${approvers.map(u => `<@${u}>`).join(", ")}
-•  *Related Documentation*: ${docs || "None"}
+ •  *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
+ •  *Request Classification*: ${classification}
+ •  *Request Content*: ${content}
+ •  *Why this change is needed*: ${why}
+ •  *People to Approve*: ${approvers.map(u => `<@${u}>`).join(", ")}
+ •  *Related Documentation*: ${docs || "None"}
 
 Result and updates will be recorded in this thread. Please also feel free to discuss in thread. Thank you!!`
         }
