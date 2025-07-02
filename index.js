@@ -184,7 +184,8 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `Hi! Here's a request submitted by <@${submitter}>! ${approvers.concat(inform).map(u => `<@${u}>`).join(", ")} *Please kindly look through it and respond accordingly.*
+          text: `Hi! Here's a request submitted by <@${submitter}>! 
+${approvers.concat(inform).map(u => `<@${u}>`).join(", ")} *Please kindly look through it and respond accordingly.*
 
  •  *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
  •  *Request Classification*: ${classification}
