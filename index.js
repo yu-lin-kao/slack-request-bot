@@ -184,7 +184,17 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `*Robot*: ${robotModel}${robotId ? ` (${robotId})` : ""}\n*Classification*: ${classification}\n*Content*: ${content}\n*Why*: ${why}\n*Approvers*: ${approvers.map(u => `<@${u}>`).join(", ")}\n*Inform*: ${inform.length > 0 ? inform.map(u => `<@${u}>`).join(", ") : "None"}\n*Docs*: ${docs || "None"}`
+          text: `Hi! Here's a request submitted by <@${submitter}>! 
+        ${approvers.concat(inform).map(u => `<@${u}>`).join(", ")} *Please kindly look through it and respond accordingly.*
+
+        - *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
+        - *Request Classification*: ${classification}
+        - *Request Content*: ${content}
+        - *Why this change is needed*: ${why}
+        - *People to Approve*: ${approvers.map(u => `<@${u}>`).join(", ")}
+        - *Related Documentation*: ${docs || "None"}
+
+        _Result and updates will be recorded in this thread. Please also feel free to discuss in thread. Thank you!!_`
         }
       }
     ]
@@ -641,6 +651,5 @@ async function getUsernamesFromIds(userIds, client) {
   console.log("🛰️ Running from Render at " + new Date());
 })();
 
-// 250623a
 
 
