@@ -221,7 +221,8 @@ Result and updates will be recorded in this thread. Please also feel free to dis
  •  *Why this change is needed*: ${why}
  •  *Related Documentation*: ${docs || "None"}
 
-Please kindly approve or decline. If there's any further discussion or points you would like to raise, please feel free to reply in the channel thread. Thank you!!`
+Please kindly approve or decline. If there's any further discussion or points you would like to raise, please feel free to reply in the channel thread. Thank you!!
+_Noted: A reminder will be sent after 24hr. This will be mark as "no reponse" after 48hr without actions._`
           }
         },
         {
