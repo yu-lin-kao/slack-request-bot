@@ -181,21 +181,52 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
     text: `*🔧 New Change Request Submitted*`,
     blocks: [
       {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `Hi! Here's a request submitted by <@${submitter}>!
-        ${approvers.concat(inform).map(u => `<@${u}>`).join(", ")} *Please kindly look through it and respond accordingly.*
-
-        • *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
-        • *Request Classification*: ${classification}
-        • *Request Content*: ${content}
-        • *Why this change is needed*: ${why}
-        • *People to Approve*: ${approvers.map(u => `<@${u}>`).join(", ")}
-        • *Related Documentation*: ${docs || "None"}
-
-        _Result and updates will be recorded in this thread. Please also feel free to discuss in thread. Thank you!!_`
-        }
+        type: "rich_text",
+        elements: [
+          {
+            type: "rich_text_section",
+            elements: [
+              { type: "text", text: `Hi! Here's a request submitted by <@${submitter}>!\n` },
+              { type: "text", text: approvers.concat(inform).map(u => `<@${u}>`).join(", ") + " — please kindly look through it and respond accordingly.\n" }
+            ]
+          },
+          {
+            type: "rich_text_list",
+            style: "bullet",
+            elements: [
+              {
+                type: "rich_text_section",
+                elements: [{ type: "text", text: `Robot Model (with ID): ${robotModel}${robotId ? ` (${robotId})` : ""}` }]
+              },
+              {
+                type: "rich_text_section",
+                elements: [{ type: "text", text: `Request Classification: ${classification}` }]
+              },
+              {
+                type: "rich_text_section",
+                elements: [{ type: "text", text: `Request Content: ${content}` }]
+              },
+              {
+                type: "rich_text_section",
+                elements: [{ type: "text", text: `Why this change is needed: ${why}` }]
+              },
+              {
+                type: "rich_text_section",
+                elements: [{ type: "text", text: `People to Approve: ${approvers.map(u => `<@${u}>`).join(", ")}` }]
+              },
+              {
+                type: "rich_text_section",
+                elements: [{ type: "text", text: `Related Documentation: ${docs || "None"}` }]
+              }
+            ]
+          },
+          {
+            type: "rich_text_section",
+            elements: [
+              { type: "text", text: "\nResult and updates will be recorded in this thread. Feel free to discuss here. Thank you!" }
+            ]
+          }
+        ]
       }
     ]
   });
