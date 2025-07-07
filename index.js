@@ -568,7 +568,6 @@ You may now proceed with implementing the changes and updating the documentation
             text: {
               type: "mrkdwn",
               text: `Hi ${approvers.concat(inform).map(u => `<@${u}>`).join(", ")}! This request has been approved by all deciders ✅
- 
  •  *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
  •  *Request Classification*: ${classification}
  •  *Request Content*: ${content}
