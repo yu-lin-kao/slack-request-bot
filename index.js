@@ -210,7 +210,7 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
         text: {
           type: "mrkdwn",
           text: `Hi! Here's a request submitted by <@${submitter}>! 
-${approvers.concat(inform).map(u => `<@${u}>`).join(", ")} *Please kindly look through it and respond accordingly.*
+${[...approvers, ...inform].map(u => `<@${u}>`).join(", ")} *Please kindly look through it and respond accordingly.*
 
  •  *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
  •  *Request Classification*: ${classification}
@@ -226,6 +226,9 @@ Result and updates will be recorded in this thread. Please also feel free to dis
   });
 
   const thread_ts = posted.ts;
+  console.log("📌 [checkFinalDecision] Approvers should be:", approvers);
+  console.log("📌 [checkFinalDecision] approvals[requestId] =", approvals[requestId]);
+
 
   // 2️⃣ 發審核通知給每位 approver（含按鈕）
   for (const user of approvers) {
@@ -599,7 +602,8 @@ You may now proceed with implementing the changes and updating the documentation
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `Hi ${approvers.concat(inform).map(u => `<@${u}>`).join(", ")}! This request has been approved by all deciders ✅
+              text: `Hi ${approvers.map(u => `<@${u}>`).join(", ")}! This request has been approved by all deciders ✅
+${inform.length > 0 ? `\nFYI: ${inform.map(u => `<@${u}>`).join(", ")}` : ""}
 
  •  *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
  •  *Request Classification*: ${classification}
@@ -661,7 +665,7 @@ You may now proceed with implementing the changes and updating the documentation
       const im = await client.conversations.open({ users: submitter });
       await client.chat.postMessage({
         channel: im.channel.id,
-        text: `:warning: Your change request was rejected ❌.
+        text: `Your change request was rejected ❌.
 
 Some deciders have declined or did not respond within 48 hours.
  •  *Declined:* ${declined.join(", ") || "None"}
