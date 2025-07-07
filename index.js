@@ -556,7 +556,15 @@ You may now proceed with implementing the changes and updating the documentation
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*Robot:* ${record.robotModel} (${record.robotId})\n*Classification:* ${record.classification}\n*Content:* ${record.content}\n*Why:* ${record.why}\n*Docs:* ${record.docs}\n*Approved by:* ${approvers.map(u => `<@${u}>`).join(", ")}\n*Informed:* ${record.inform.map(u => `<@${u}>`).join(", ")}`
+              text: `Hi ${approvers.concat(inform).map(u => `<@${u}>`).join(", ")}! This request has been approved by all deciders ✅
+ 
+ •  *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
+ •  *Request Classification*: ${classification}
+ •  *Request Content*: ${content}
+ •  *Approved by:* ${approvers.map(u => `<@${u}>`).join(", ")}
+ •  *Related Documentation*: ${docs || "None"}
+
+ Please kindly adjust accordingly and let <@${submitter}> know if you have any thoughts or suggestion! Thank you!`
             }
           }
         ]
