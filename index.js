@@ -222,6 +222,7 @@ Result and updates will be recorded in this thread. Please also feel free to dis
  •  *Related Documentation*: ${docs || "None"}
 
 Please kindly approve or decline. If there's any further discussion or points you would like to raise, please feel free to reply in the channel thread. Thank you!!
+
 _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse" after 48hr without actions._`
           }
         },
@@ -526,7 +527,9 @@ async function checkFinalDecision(requestId, client) {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `✅ *Your change request has been approved by all approvers!*\n\nA final change notice has been posted in channel.\n\nYou may now proceed with implementing the change and updating the documentation.\n\nWhen you're done, please confirm below:`
+              text: `Hi! *Your change request has been approved by all approvers! ✅* A final change notice has been posted in channel. 
+You may now proceed with implementing the changes and updating the documentation.
+*When you're done, please kindly confirm below:*`
             }
           },
           {
