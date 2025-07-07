@@ -88,7 +88,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             action_id: "value", 
             placeholder: {
               type: "plain_text",
-              text: "Please kindly describe this change. To take reference, please consider the following four factors: 1)Scope; 2)Timeline; 3)Resources; 4)Cost. Thank you!"
+              text: "Please kindly describe the change, possibly including scope, timeline, resources, and cost."
             },
             multiline: true },
           label: { type: "plain_text", text: "Change Content" },
@@ -127,7 +127,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             action_id: "value",
             placeholder: {
               type: "plain_text",
-              text: "Select users that should be informed, if the user is already an approver, please don't add them here again."
+              text: "Select users that should be informed"
             }
           },
           label: { type: "plain_text", text: "Who should be informed?" },
@@ -150,7 +150,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
           element: { 
             type: "plain_text_input", 
             action_id: "value",
-            placeholder: { type: "plain_text", text: "This could be the documentations to take reference, or the ones that should be update if the request is approved" }
+            placeholder: { type: "plain_text", text: "Documentations to take reference or should be update after approved" }
           },
           label: { type: "plain_text", text: "Related documentation (Link)" },
           optional: true
