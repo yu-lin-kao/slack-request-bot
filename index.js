@@ -480,7 +480,6 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
     docs,
     submitter: userDisplayName,
     status: `✅ Final Documentation Updated (by ${userDisplayName}, ${new Date().toLocaleDateString()})`,
-    threadLink: `https://earthsense.slack.com/archives/${channel}/p${thread_ts.replace(".", "")}`
   });
 
   // ✅ 私訊回應者
