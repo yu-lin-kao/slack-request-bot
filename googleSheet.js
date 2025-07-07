@@ -34,7 +34,8 @@ async function logToSheet({
   inform,
   docs,
   submitter,
-  status
+  status,
+  threadLink
 }) {
   const authClient = await auth.getClient();
   const sheets = google.sheets({ version: "v4", auth: authClient });
@@ -92,7 +93,8 @@ async function logToSheet({
       docs,
       submitter,
       date,
-      status
+      status,
+      threadLink || ""
     ];
 
     await sheets.spreadsheets.values.append({

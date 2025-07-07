@@ -479,7 +479,8 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
     inform: inform,
     docs,
     submitter: userDisplayName,
-    status: `✅ Final Documentation Updated (by ${userDisplayName}, ${new Date().toLocaleDateString()})`
+    status: `✅ Final Documentation Updated (by ${userDisplayName}, ${new Date().toLocaleDateString()})`,
+    threadLink: `https://earthsense.slack.com/archives/${channel}/p${thread_ts.replace(".", "")}`
   });
 
   // ✅ 私訊回應者
@@ -649,7 +650,8 @@ You may now proceed with implementing the changes and updating the documentation
         inform: record.inform.map(u => userNames[u] || u),
         docs: record.docs,
         submitter: userNames[submitter] || submitter,
-        status: " ✅ -> Pending Doc Update"
+        status: " ✅ -> Pending Doc Update",
+        threadLink: `https://earthsense.slack.com/archives/${channel}/p${thread_ts.replace(".", "")}`
       });
 
       console.log(`✅ Request ${requestId} logged to spreadsheet as approved`);
@@ -704,7 +706,8 @@ Please coordinate and submit again if needed. Thank you!`
         inform: record.inform.map(u => userNames[u] || u),
         docs: record.docs,
         submitter: userNames[submitter] || submitter,
-        status: " ❌ Needs Resubmission"
+        status: " ❌ Needs Resubmission",
+        threadLink: `https://earthsense.slack.com/archives/${channel}/p${thread_ts.replace(".", "")}`
       });
 
       console.log(`❌ Request ${requestId} logged to spreadsheet as rejected`);
