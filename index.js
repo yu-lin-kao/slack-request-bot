@@ -483,10 +483,20 @@ async function checkFinalDecision(requestId, client) {
     console.error(`❌ No record found for requestId: ${requestId}`);
     return;
   }
-  
-  const approvers = record.approvers;
-  const inform = record.inform || [];
-  const submitter = record.submitter;
+
+  const {
+    robotModel,
+    robotId,
+    classification,
+    content,
+    docs,
+    approvers,
+    inform = [],
+    submitter,
+    channel,
+    thread_ts,
+    why
+  } = record;
 
   // 1️⃣ 確認是否全部回應（包含 no_response）
   const current = approvals[requestId];
