@@ -602,8 +602,7 @@ You may now proceed with implementing the changes and updating the documentation
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `Hi ${approvers.map(u => `<@${u}>`).join(", ")}! This request has been approved by all deciders ✅
-${inform.length > 0 ? `\nFYI: ${inform.map(u => `<@${u}>`).join(", ")}` : ""}
+              text: `Hi ${[...approvers, ...inform].map(u => `<@${u}>`).join(", ")}! This request has been approved by all deciders ✅
 
  •  *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
  •  *Request Classification*: ${classification}
