@@ -527,7 +527,7 @@ async function checkFinalDecision(requestId, client) {
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `Hi! *Your change request has been approved by all approvers! ✅* A final change notice has been posted in channel. 
+              text: `Hi! *Your change request has been approved by all approvers! ✅*
 You may now proceed with implementing the changes and updating the documentation.
 *When you're done, please kindly confirm below:*`
             }
