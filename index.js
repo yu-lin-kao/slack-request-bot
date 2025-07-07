@@ -124,7 +124,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             action_id: "value",
             placeholder: { type: "plain_text", text: "Please put the link(s) here." }
           },
-          label: { type: "plain_text", text: "What are the related documentation (Reference or To Update)" },
+          label: { type: "plain_text", text: "What are the related documentation? (Reference or To Update)" },
           optional: true
         },
         {
@@ -352,7 +352,7 @@ _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse"
           const im = await client.conversations.open({ users: userId });
           await client.chat.postMessage({
             channel: im.channel.id,
-            text: `⚠️ Since you did not respond to the request within 48 hours, it is now marked as *No Response*.`
+            text: `⚠️ Since you didn't respond to the request within 48 hours, it is now marked as *No Response*.`
           });
         }
       }
@@ -489,7 +489,8 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
   await client.chat.postMessage({
     channel: record.channel,
     thread_ts: record.thread_ts,
-    text: `📄 <@${userId}> confirmed documentation updated for request *${requestId}* on ${new Date().toLocaleDateString()}.\n\nChange is now fully executed and logged.`
+    text: `📄 <@${userId}> confirmed that the related documentations are updated for this request on ${new Date().toLocaleDateString()}.
+This change request is now fully executed and logged.`
   });
 
   console.log(`📄 Documentation update confirmed for request ${requestId}`);
@@ -622,7 +623,7 @@ You may now proceed with implementing the changes and updating the documentation
           const imReminder = await client.conversations.open({ users: submitter });
           await client.chat.postMessage({
             channel: imReminder.channel.id,
-            text: `⏰ Reminder: Please confirm the documentation has been updated for your approved change request *${requestId}*. Click the button in the previous message if you have already done so.`
+            text: `⏰ Reminder: Please kindly confirm if the documentation has been updated for your approved change request. Click the button in the previous message if you have already updated. Thank you!`
           });
 
           console.log(`⏰ Reminder sent to submitter <@${submitter}> for doc update (requestId: ${requestId})`);
