@@ -568,6 +568,7 @@ You may now proceed with implementing the changes and updating the documentation
             text: {
               type: "mrkdwn",
               text: `Hi ${approvers.concat(inform).map(u => `<@${u}>`).join(", ")}! This request has been approved by all deciders ✅
+
  •  *Robot Model (with ID)*: ${robotModel}${robotId ? ` (${robotId})` : ""}
  •  *Request Classification*: ${classification}
  •  *Request Content*: ${content}
@@ -628,13 +629,24 @@ You may now proceed with implementing the changes and updating the documentation
       const im = await client.conversations.open({ users: submitter });
       await client.chat.postMessage({
         channel: im.channel.id,
-        text: `:warning: Your change request could not proceed.\nSome approvers have declined or did not respond within 48 hours.\n\n*Declined:* ${declined.join(", ") || "None"}\n*No Response:* ${noResp.join(", ") || "None"}\n\nPlease coordinate and submit again if needed.`
+        text: `:warning: Your change request was rejected ❌.
+
+Some deciders have declined or did not respond within 48 hours.
+ •  *Declined:* ${declined.join(", ") || "None"}
+ •  *No Response:* ${noResp.join(", ") || "None"}
+
+Please coordinate and submit again if needed. Thank you!`
       });
 
       await client.chat.postMessage({
         channel: record.channel,
         thread_ts: record.thread_ts,
-        text: `❌ *Change Request Rejected or Timed Out* for ${record.robotModel} (${record.robotId})\n\n*Declined:* ${declined.join(", ") || "None"}\n*No Response:* ${noResp.join(", ") || "None"}\n\nPlease coordinate and resubmit if needed.`
+        text: `Hi! This request for ${record.robotModel} (${record.robotId}) has been rejected. ❌
+
+ •  *Declined by:* ${declined.join(", ") || "None"}
+ •  *No Response:* ${noResp.join(", ") || "None"}
+ 
+ <@${submitter}> Please coordinate and resubmit if needed. Thank you!`
       });
 
 
