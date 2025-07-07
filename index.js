@@ -74,7 +74,8 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             options: [
               { text: { type: "plain_text", text: "Scope" }, value: "Scope" },
               { text: { type: "plain_text", text: "Design-Mech" }, value: "Design-Mech" },
-              { text: { type: "plain_text", text: "Design-Elec" }, value: "Design-Elec" }
+              { text: { type: "plain_text", text: "Design-Elec" }, value: "Design-Elec" },
+              { text: { type: "plain_text", text: "Other" }, value: "Other" }
             ]
           },
           label: { type: "plain_text", text: "Change Classification" },
@@ -82,13 +83,27 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
         {
           type: "input",
           block_id: "content",
-          element: { type: "plain_text_input", action_id: "value", multiline: true },
+          element: { 
+            type: "plain_text_input", 
+            action_id: "value", 
+            placeholder: {
+              type: "plain_text",
+              text: "Please kindly describe this change. To take reference, please consider the following four factors: 1)Scope; 2)Timeline; 3)Resources; 4)Cost. Thank you!"
+            },
+            multiline: true },
           label: { type: "plain_text", text: "Change Content" },
         },
         {
           type: "input",
           block_id: "why",
-          element: { type: "plain_text_input", action_id: "value", multiline: true },
+          element: { 
+            type: "plain_text_input", 
+            action_id: "value", 
+            placeholder: {
+              type: "plain_text",
+              text: "Please kindly explain why this change would be helpful."
+            },
+            multiline: true },
           label: { type: "plain_text", text: "Why is this change needed?" },
         },
         {
@@ -112,7 +127,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             action_id: "value",
             placeholder: {
               type: "plain_text",
-              text: "Select users to be informed"
+              text: "Select users that should be informed, if the user is already an approver, please don't add them here again."
             }
           },
           label: { type: "plain_text", text: "Who should be informed?" },
@@ -135,9 +150,9 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
           element: { 
             type: "plain_text_input", 
             action_id: "value",
-            placeholder: { type: "plain_text", text: "https://drive.google.com/..." }
+            placeholder: { type: "plain_text", text: "This could be the documentations to take reference, or the ones that should be update if the request is approved" }
           },
-          label: { type: "plain_text", text: "Related documentation (Google Drive link)" },
+          label: { type: "plain_text", text: "Related documentation (Link)" },
           optional: true
         }
       ]
@@ -327,7 +342,7 @@ _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse"
           const im = await client.conversations.open({ users: userId });
           await client.chat.postMessage({
             channel: im.channel.id,
-            text: `⚠️ You did not respond to the change request within 48 hours and have been marked as *No Response*.`
+            text: `⚠️ Since you did not respond to the request within 48 hours, it is now marked as *No Response*.`
           });
         }
       }
@@ -458,7 +473,7 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
   await client.chat.postEphemeral({
     channel: body.channel.id,
     user: userId,
-    text: `✅ You confirmed the documentation update. Thank you!`
+    text: `✅ Thank you for confirming the documentation update!`
   });
 
   await client.chat.postMessage({
