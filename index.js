@@ -98,7 +98,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             action_id: "value", 
             placeholder: {
               type: "plain_text",
-              text: "What exactly is changing? Include scope, timeline, resources, and budget if possible."
+              text: "What exactly is changing? Kindly include scope, timeline, resources, and budget perspective if possible."
             },
             multiline: true },
           label: { type: "plain_text", text: "Change Content" },
@@ -124,7 +124,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             action_id: "value",
             placeholder: { type: "plain_text", text: "Please put the link(s) here." }
           },
-          label: { type: "plain_text", text: "Related documentation (To take reference or should be update after approved)" },
+          label: { type: "plain_text", text: "What are the related documentation (Reference or To Update)" },
           optional: true
         },
         {
@@ -163,7 +163,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             default_to_current_conversation: true,
             response_url_enabled: true
           },
-          label: { type: "plain_text", text: "Discussion should happen in which Slack channel?" }
+          label: { type: "plain_text", text: "Which Slack channel should this discussion happen?" }
         }
       ]
     }
