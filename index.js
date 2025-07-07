@@ -558,6 +558,12 @@ You may now proceed with implementing the changes and updating the documentation
         ]
       });
 
+      await client.reactions.add({
+        name: "white_check_mark",
+        channel: channel,
+        timestamp: thread_ts
+      });
+
       await client.chat.postMessage({
         channel: record.channel,
         thread_ts: record.thread_ts,
@@ -636,6 +642,12 @@ Some deciders have declined or did not respond within 48 hours.
  •  *No Response:* ${noResp.join(", ") || "None"}
 
 Please coordinate and submit again if needed. Thank you!`
+      });
+
+      await client.reactions.add({
+        name: "x",
+        channel: channel,
+        timestamp: thread_ts
       });
 
       await client.chat.postMessage({
