@@ -641,12 +641,12 @@ Please coordinate and submit again if needed. Thank you!`
       await client.chat.postMessage({
         channel: record.channel,
         thread_ts: record.thread_ts,
-        text: `Hi! This request for ${record.robotModel} (${record.robotId}) has been rejected. ❌
+        text: `Hi! This request has been rejected. ❌
 
  •  *Declined by:* ${declined.join(", ") || "None"}
  •  *No Response:* ${noResp.join(", ") || "None"}
  
- <@${submitter}> Please coordinate and resubmit if needed. Thank you!`
+ <@${submitter}> Please kindly coordinate and resubmit if needed. Thank you!`
       });
 
 
