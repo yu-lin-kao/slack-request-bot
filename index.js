@@ -37,6 +37,16 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
       close: { type: "plain_text", text: "Cancel" },
       blocks: [
         {
+          type: "context",
+          elements: [
+            {
+              type: "mrkdwn",
+              text: ":memo: Please fill out all *required* fields carefully. Submission will notify relevant parties and initiate the approval process. Thank you!"
+            }
+          ]
+        },
+
+        {
           type: "input",
           block_id: "robot_model",
           element: {
@@ -88,7 +98,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             action_id: "value", 
             placeholder: {
               type: "plain_text",
-              text: "Please kindly describe the change, possibly including scope, timeline, resources, and cost."
+              text: "What exactly is changing? Include scope, timeline, resources, and budget if possible."
             },
             multiline: true },
           label: { type: "plain_text", text: "Change Content" },
@@ -101,10 +111,21 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             action_id: "value", 
             placeholder: {
               type: "plain_text",
-              text: "Please kindly explain why this change would be helpful."
+              text: "Why is this important now? What risk or opportunity does it address?"
             },
             multiline: true },
           label: { type: "plain_text", text: "Why is this change needed?" },
+        },
+        {
+          type: "input",
+          block_id: "docs",
+          element: { 
+            type: "plain_text_input", 
+            action_id: "value",
+            placeholder: { type: "plain_text", text: "Please put the link(s) here." }
+          },
+          label: { type: "plain_text", text: "Related documentation (To take reference or should be update after approved)" },
+          optional: true
         },
         {
           type: "input",
@@ -143,17 +164,6 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             response_url_enabled: true
           },
           label: { type: "plain_text", text: "Discussion should happen in which Slack channel?" }
-        },
-        {
-          type: "input",
-          block_id: "docs",
-          element: { 
-            type: "plain_text_input", 
-            action_id: "value",
-            placeholder: { type: "plain_text", text: "Documentations to take reference or should be update after approved" }
-          },
-          label: { type: "plain_text", text: "Related documentation (Link)" },
-          optional: true
         }
       ]
     }
