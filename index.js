@@ -466,8 +466,6 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
   const userNames = await getUsernamesFromIds([userId], client);
   const userDisplayName = userNames[userId] || userId;
 
-  const thread_ts = result.ts;
-
   // ✅ 更新 Spreadsheet 狀態
   await logToSheet({
     requestId,
@@ -638,8 +636,6 @@ You may now proceed with implementing the changes and updating the documentation
         }
       }, 1000 * 60 * 0.5); // ⚠️ 測試用 0.5 分鐘，正式請用 1000 * 60 * 60 * 24
 
-      const thread_ts = result.ts;
-
       // 記錄到 spreadsheet
       await logToSheet({
         requestId,
@@ -694,8 +690,6 @@ Please coordinate and submit again if needed. Thank you!`
  
  <@${submitter}> Please kindly coordinate and resubmit if needed. Thank you!`
       });
-
-      const thread_ts = result.ts;
 
       // 記錄到 spreadsheet
       await logToSheet({
