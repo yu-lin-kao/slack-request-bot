@@ -500,7 +500,6 @@ This change request is now fully executed and logged.`
 });
 
 
-
 async function checkFinalDecision(requestId, client) {
   if (finalizedRequests.has(requestId)) {
     console.log(`🛑 Request ${requestId} already finalized. Skipping duplicate actions.`);
