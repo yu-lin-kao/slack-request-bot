@@ -485,6 +485,7 @@ async function checkFinalDecision(requestId, client) {
   }
   
   const approvers = record.approvers;
+  const inform = record.inform || [];
   const submitter = record.submitter;
 
   // 1️⃣ 確認是否全部回應（包含 no_response）
