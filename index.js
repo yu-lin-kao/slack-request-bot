@@ -452,14 +452,23 @@ app.action(/^(approve_action|decline_action)$/, async ({ body, ack, action, clie
   console.log("✅ Current approval state:", approvals[requestId]);
 });
 
-app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
+app.action("confirm_docs_updated", async ({ ack, body, client, action }) => 
+
   await ack();
 
   const userId = body.user.id;
   const requestId = action.value;
   const record = pendingApprovals[requestId];
   const decisions = approvals[requestId];
-  const dateConfirmed = DateTime.now().setZone("America/Chicago").toFormat("yyyy-MM-dd");
+
+  if (record.docConfirmed) {
+    await client.chat.postEphemeral({
+      channel: body.channel.id,
+      user: userId,
+      text: `⚠️ This request has already been confirmed as completed.`
+    });
+    return;
+  }
 
   if (!record) {
     await client.chat.postEphemeral({
@@ -469,6 +478,8 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
     });
     return;
   }
+
+  const dateConfirmed = DateTime.now().setZone("America/Chicago").toFormat("yyyy-MM-dd");
 
   const { robotModel, robotId, classification, content, why, docs, channel, inform, approvers } = record;
 
