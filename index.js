@@ -452,7 +452,7 @@ app.action(/^(approve_action|decline_action)$/, async ({ body, ack, action, clie
   console.log("✅ Current approval state:", approvals[requestId]);
 });
 
-app.action("confirm_docs_updated", async ({ ack, body, client, action }) => 
+app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
 
   await ack();
 
