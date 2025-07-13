@@ -337,7 +337,7 @@ _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse"
     } catch (err) {
       console.error("⚠️ Reminder task failed:", err);
     }
-  }, 1000 * 60 * 0.5); // <-- 開發測試用 0.5分鐘提醒，正式版請設為 1000 * 60 * 60 * 24
+  }, 1000 * 60 * 60 * 24); // <-- 開發測試用 1000 * 60 * 0.5，正式版請設為 1000 * 60 * 60 * 24
 
   // 🕒 設定 48 小時後自動標記 no response
   setTimeout(async () => {
@@ -373,7 +373,7 @@ _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse"
     } catch (err) {
       console.error("❌ Error during 48hr no response check:", err);
     }
-  }, 1000 * 60 * 1); // 測試用 1 分鐘，正式版請設為 1000 * 60 * 60 * 48
+  }, 1000 * 60 * 60 * 48); // 測試用 1000 * 60 * 1，正式版請設為 1000 * 60 * 60 * 48
 });
 
 
@@ -657,7 +657,7 @@ You may now proceed with implementing the changes and updating the documentation
         } catch (err) {
           console.error(`❌ Doc update reminder failed for requestId ${requestId}:`, err);
         }
-      }, 1000 * 60 * 0.5); // ⚠️ 測試用 0.5 分鐘，正式請用 1000 * 60 * 60 * 24
+      }, 1000 * 60 * 60 * 24); // ⚠️ 測試用 1000 * 60 * 0.5，正式請用 1000 * 60 * 60 * 24
 
       // 記錄到 spreadsheet
       await logToSheet({
