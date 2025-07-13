@@ -15,6 +15,15 @@ appExpress.get("/", (req, res) => {
   res.status(200).send("🛰️ Change Request Bot is running.");
 });
 
+// /healthcheck -> 給未來做準備
+appExpress.get("/healthcheck", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 const { logToSheet } = require('./googleSheet');
 const { saveRequestToFirestore, updateStatusInFirestore } = require('./firestoreLog');
 
