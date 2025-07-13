@@ -362,6 +362,13 @@ _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse"
 
       // ✅ 加這一行在最後：處理完所有 no_response 之後，判斷整體決策結果
       await checkFinalDecision(requestId, client);
+      await updateStatusInFirestore(requestId, {
+        approverStatus: record.approvers.map(uid => ({
+          uid,
+          decision: approvals[requestId][uid] || 'no_response',
+          updatedAt: DateTime.now().setZone("America/Chicago").toISO()
+        }))
+      });
 
     } catch (err) {
       console.error("❌ Error during 48hr no response check:", err);
