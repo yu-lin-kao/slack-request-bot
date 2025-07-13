@@ -459,6 +459,7 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
   const requestId = action.value;
   const record = pendingApprovals[requestId];
   const decisions = approvals[requestId];
+  const dateConfirmed = DateTime.now().setZone("America/Chicago").toFormat("yyyy-MM-dd");
 
   if (!record) {
     await client.chat.postEphemeral({
@@ -492,7 +493,7 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
     inform: inform,
     docs,
     submitter: userDisplayName,
-    status: `✅ Final Documentation Updated (by ${userDisplayName}, ${new Date().toLocaleDateString()})`,
+    status: `✅ Final Documentation Updated (by ${userDisplayName}, ${dateConfirmed})`,
   });
 
   // ✅ 私訊回應者
