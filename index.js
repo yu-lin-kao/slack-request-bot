@@ -514,10 +514,12 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
     text: `✅ Thank you for confirming the documentation update!`
   });
 
+  await updateStatusInFirestore(requestId, { docConfirmed: true });
+
   await client.chat.postMessage({
     channel: record.channel,
     thread_ts: record.thread_ts,
-    text: `📄 <@${userId}> confirmed that the related documentations are updated for this request on ${new Date().toLocaleDateString()}.
+    text: `📄 <@${userId}> confirmed that the related documentations are updated for this request on ${dateConfirmed}.
 This change request is now fully executed and logged.`
   });
 
