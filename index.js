@@ -396,8 +396,14 @@ app.action(/^(approve_action|decline_action)$/, async ({ body, ack, action, clie
   // 記錄使用者回應
   const decision = action.action_id === "approve_action" ? "approved" : "declined";
   approvals[requestId][userId] = decision;
+  await updateStatusInFirestore(requestId, {
+    approverStatus: approvers.map(uid => ({
+      uid,
+      decision: approvals[requestId][uid] || null,
+      updatedAt: DateTime.now().setZone("America/Chicago").toISO()
+    }))
+  });
   await checkFinalDecision(requestId, client);
-  
 
   // 更新原始 message（變灰按鈕 or 顯示已選）
   await client.chat.update({

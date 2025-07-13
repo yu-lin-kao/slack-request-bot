@@ -1,3 +1,4 @@
+const admin = require("firebase-admin");
 const db = require('./firebase');
 
 db.collection('test').add({ hello: "world" })
