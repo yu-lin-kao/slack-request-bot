@@ -50,7 +50,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
           elements: [
             {
               type: "mrkdwn",
-              text: ":memo: Please fill out all *required* fields carefully. Submission will notify relevant parties and initiate the approval process. Thank you! (Noted: If the robot isn't in the channel you wanna post, please add it in first.)"
+              text: ":memo: Please fill out all *required* fields carefully. Submission will notify relevant parties and initiate the approval process. Thank you! \n (Noted: If the robot isn't in the target posting channel, please kindly invite it in first.)"
             }
           ]
         },
