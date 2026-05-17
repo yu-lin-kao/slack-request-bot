@@ -809,5 +809,5 @@ async function getUsernamesFromIds(userIds, client) {
 (async () => {
   await app.start(config.PORT);
   console.log("⚡️ Slack Bot is running");
-  console.log("🛰️ Running from Render at " + new Date());
+  console.log("🛰️ Started at " + new Date());
 })();
