@@ -21,7 +21,8 @@ const auth = new google.auth.GoogleAuth({
 const SPREADSHEET_ID = config.SPREADSHEET_ID;
 const SHEET_NAME = config.SHEET_NAME;
 
-let cachedRowMap = {}; // { requestId: rowIndex }
+// In-memory cache mapping requestId → sheet row index to avoid repeated full-sheet scans
+let cachedRowMap = {};
 
 async function logToSheet({
   requestId,

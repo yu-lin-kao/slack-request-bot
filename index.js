@@ -12,20 +12,19 @@ function msToHuman(ms) {
   return `${totalSeconds} sec`;
 }
 
-// ✅ 先定義 receiver
+// Use ExpressReceiver so we can attach custom HTTP endpoints alongside Slack handlers
 const receiver = new ExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
 });
 
-// ✅ 再從 receiver 取得 express app
 const appExpress = receiver.app;
 
-// ✅ 加入 Render ping 用的 endpoint
+// Root endpoint — used by Render to verify the service is up
 appExpress.get("/", (_req, res) => {
   res.status(200).send("🛰️ Change Request Bot is running.");
 });
 
-// /healthcheck -> 給未來做準備
+// Detailed health check — exposes uptime and timestamp for monitoring
 appExpress.get("/healthcheck", (_req, res) => {
   res.status(200).json({
     status: "ok",
@@ -215,22 +214,23 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
   });
 });
 
-// 這個物件會記錄誰還沒回，什麼時候送出的
-const pendingApprovals = {}; // { requestId: { approvers, submitter, submittedAt, remindedUsers: {} } }
+// In-memory store of active requests pending approval.
+// Lost on server restart — Firestore is the persistent source of truth.
+const pendingApprovals = {}; // { requestId: { approvers, submitter, submittedAt, remindedUsers, ... } }
 
 app.view("change_request_submit", async ({ ack, view, client }) => {
   await ack();
   const vals = view.state.values;
   const approvers = vals.approvers.value.selected_users;
-  const inform = vals.inform?.value?.selected_users || []; // optional
+  const inform = vals.inform?.value?.selected_users || [];
   const channel = vals.channel.value.selected_conversation;
-  const docs = vals.docs?.value?.value || ""; // optional
+  const docs = vals.docs?.value?.value || "";
   const submitter = view.private_metadata;
 
-  // ✅ 處理 Robot Model (多選)
+  // Join multi-select values into a comma-separated string
   const robotModel = vals.robot_model.value.selected_options.map(opt => opt.value).join(", ");
 
-  // ✅ 處理 Robot ID（轉大寫）
+  // Normalize robot ID to uppercase for consistency
   const robotId = (vals.robot_id.value.value || "").toUpperCase();
 
   const classification = vals.classification.value.selected_option.value;
@@ -246,7 +246,6 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
   const noResponseDelayMs   = parseHrInput(vals.no_response_delay?.value?.value,  config.NO_RESPONSE_DELAY_MS);
   const docUpdateReminderMs = parseHrInput(vals.doc_update_reminder?.value?.value, config.DOC_UPDATE_REMINDER_MS);
 
-  // ❗ 驗證 Robot Model 是否有值
   if (!robotModel) {
     console.error("Robot model is required but empty.");
     return;
@@ -254,7 +253,7 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
 
   const requestId = Date.now();
 
-  // 1️⃣ 發 summary 到頻道（沒有按鈕）
+  // 1. Post the request summary to the selected channel (read-only, no buttons)
   const posted = await client.chat.postMessage({
     channel: channel,
     text: `*🔧 New Change Request Submitted*`,
@@ -282,7 +281,7 @@ Result and updates will be recorded in this thread. Please also feel free to dis
   const thread_ts = posted.ts;
 
 
-  // 2️⃣ 發審核通知給每位 approver（含按鈕）
+  // 2. DM each approver with approve / decline buttons
   for (const user of approvers) {
     const im = await client.conversations.open({ users: user });
     await client.chat.postMessage({
@@ -330,7 +329,7 @@ _Noted: A reminder will be sent after ${msToHuman(reminderDelayMs)} and this wil
     });
   }
 
-  // 初始化記錄
+  // Store full request context for use in later callbacks and reminders
   pendingApprovals[requestId] = {
     approvers,
     submitter,
@@ -352,7 +351,7 @@ _Noted: A reminder will be sent after ${msToHuman(reminderDelayMs)} and this wil
 
   const dtChicago = DateTime.now().setZone(config.TIMEZONE);
 
-  // 🔥 Firestore 紀錄初始狀態
+  // Persist the initial request state to Firestore
   await saveRequestToFirestore(requestId, {
     robotModel,
     robotId,
@@ -372,7 +371,7 @@ _Noted: A reminder will be sent after ${msToHuman(reminderDelayMs)} and this wil
   });
 
 
-  // 🕒 設定 24 小時後提醒
+  // Schedule reminder DM to approvers who haven't responded yet
   setTimeout(async () => {
     try {
       const record = pendingApprovals[requestId];
@@ -394,7 +393,7 @@ _Noted: A reminder will be sent after ${msToHuman(reminderDelayMs)} and this wil
     }
   }, reminderDelayMs);
 
-  // 🕒 設定後自動標記 no response
+  // Auto-mark non-responders and finalize the decision after the deadline
   setTimeout(async () => {
     try {
       const record = pendingApprovals[requestId];
@@ -406,7 +405,7 @@ _Noted: A reminder will be sent after ${msToHuman(reminderDelayMs)} and this wil
           approvals[requestId][userId] = "no_response";
           console.log(`❌ [Auto] Marked ${userId} as no_response for request ${requestId}`);
 
-          // 發私訊通知他被標記
+          // Notify the approver via DM that they were marked as no-response
           const im = await client.conversations.open({ users: userId });
           await client.chat.postMessage({
             channel: im.channel.id,
@@ -431,9 +430,10 @@ _Noted: A reminder will be sent after ${msToHuman(reminderDelayMs)} and this wil
 });
 
 
-// 暫時用一個 memory 結構儲存每筆審核狀態
-const approvals = {}; // { requestId: { userId: "approved"/"declined" } }
-const finalizedRequests = new Set(); // ✅ 防止 checkFinalDecision 執行多次
+// In-memory approval decisions. Lost on restart; Firestore holds the authoritative state.
+const approvals = {}; // { requestId: { userId: "approved" | "declined" | "no_response" } }
+// Guards against checkFinalDecision running more than once per request
+const finalizedRequests = new Set();
 
 app.action(/^(approve_action|decline_action)$/, async ({ body, ack, action, client }) => {
   await ack();
@@ -441,10 +441,9 @@ app.action(/^(approve_action|decline_action)$/, async ({ body, ack, action, clie
   const userId = body.user.id;
   const { approvers, requestId } = JSON.parse(action.value);
 
-  // 初始化記錄區
   if (!approvals[requestId]) approvals[requestId] = {};
 
-  // 如果這個 user 已回覆過，就不要再記錄
+  // Reject duplicate submissions from the same approver
   if (approvals[requestId][userId]) {
     await client.chat.postEphemeral({
       channel: body.channel.id,
@@ -454,7 +453,6 @@ app.action(/^(approve_action|decline_action)$/, async ({ body, ack, action, clie
     return;
   }
 
-  // 記錄使用者回應
   const decision = action.action_id === "approve_action" ? "approved" : "declined";
   approvals[requestId][userId] = decision;
   await updateStatusInFirestore(requestId, {
@@ -466,7 +464,7 @@ app.action(/^(approve_action|decline_action)$/, async ({ body, ack, action, clie
   });
   await checkFinalDecision(requestId, client);
 
-  // 更新原始 message（變灰按鈕 or 顯示已選）
+  // Update the DM message to show which button was pressed
   await client.chat.update({
     channel: body.channel.id,
     ts: body.message.ts,
@@ -495,14 +493,13 @@ app.action(/^(approve_action|decline_action)$/, async ({ body, ack, action, clie
     })
   });
 
-  // 傳私訊通知使用者
+  // Confirm the decision to the approver via ephemeral message
   await client.chat.postEphemeral({
     channel: body.channel.id,
     user: userId,
     text: `You have *${decision}* this change request.`
   });
 
-  // 👉 如果你想印出目前已回覆的人
   console.log("✅ Current approval state:", approvals[requestId]);
 });
 
@@ -535,17 +532,17 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
 
   const dateConfirmed = DateTime.now().setZone(config.TIMEZONE).toFormat("yyyy-MM-dd");
 
-  const { robotModel, robotId, classification, content, docs, inform, approvers } = record;
+  const { robotModel, robotId, classification, content, why, docs, inform, approvers } = record;
 
   if (pendingApprovals[requestId]) {
     pendingApprovals[requestId].docConfirmed = true;
   }
 
-  // ✅ 轉換 UserID → Display name
+  // Resolve the confirming user's display name for the log
   const userNames = await getUsernamesFromIds([userId], client);
   const userDisplayName = userNames[userId] || userId;
 
-  // ✅ 更新 Spreadsheet 狀態
+  // Log the completed request to Google Sheets
   await logToSheet({
     requestId,
     robotModel,
@@ -561,7 +558,7 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
     status: `✅ Final Documentation Updated (by ${userDisplayName}, ${dateConfirmed})`,
   });
 
-  // ✅ 私訊回應者
+  // Confirm to the user that their documentation confirmation was received
   await client.chat.postEphemeral({
     channel: body.channel.id,
     user: userId,
@@ -608,7 +605,7 @@ async function checkFinalDecision(requestId, client) {
     docUpdateReminderMs = config.DOC_UPDATE_REMINDER_MS
   } = record;
 
-  // 1️⃣ 確認是否全部回應（包含 no_response）
+  // 1. Check whether all approvers have responded (including auto no-response)
   const current = approvals[requestId];
   if (!current) {
     console.log(`⏸️ No approvals recorded yet for request ${requestId}`);
@@ -618,25 +615,23 @@ async function checkFinalDecision(requestId, client) {
   const allResponded = approvers.every(uid => current[uid]);
   if (!allResponded) {
     console.log(`⏸️ Not all approvers responded for request ${requestId}:`, current);
-    return; // 有人尚未回應
+    return; // still waiting on some approvers
   }
 
-  // 防止重複執行
   finalizedRequests.add(requestId);
-  
   console.log("🎯 All approvers responded:", current);
 
-  // 2️⃣ 判斷結果
+  // 2. Determine the overall outcome
   const anyDeclined = Object.values(current).includes("declined");
   const anyNoResponse = Object.values(current).includes("no_response");
 
   try {
-    // 先獲取所有用戶名稱
+    // Resolve all user IDs to display names for messages and log entries
     const allUserIds = [...new Set([...approvers, ...record.inform, submitter])];
     const userNames = await getUsernamesFromIds(allUserIds, client);
-    
+
     if (!anyDeclined && !anyNoResponse) {
-      // ✅ 全部核准 → 通知申請人可以改變
+      // All approved — notify submitter and post approval notice to the channel
       console.log(`✅ Request ${requestId} approved by all`);
       
       const im = await client.conversations.open({ users: submitter });
@@ -697,12 +692,12 @@ You may now proceed with implementing the changes and updating the documentation
         ]
       });
 
-      // 🕒 24 小時後提醒 submitter 若尚未確認文件更新
+      // Remind submitter to confirm the doc update if they haven't done so yet
       setTimeout(async () => {
         try {
           const recordStillExists = pendingApprovals[requestId];
           if (!recordStillExists) return;
-          if (recordStillExists.docConfirmed) return; // 已確認就不提醒
+          if (recordStillExists.docConfirmed) return; // already confirmed, skip
 
           const imReminder = await client.conversations.open({ users: submitter });
           await client.chat.postMessage({
@@ -716,7 +711,7 @@ You may now proceed with implementing the changes and updating the documentation
         }
       }, docUpdateReminderMs);
 
-      // 記錄到 spreadsheet
+      // Log the approved request to Google Sheets
       await logToSheet({
         requestId,
         robotModel: record.robotModel,
@@ -736,7 +731,7 @@ You may now proceed with implementing the changes and updating the documentation
       console.log(`✅ Request ${requestId} logged to spreadsheet as approved`);
 
     } else {
-      // ❌ 有人拒絕或未回覆 → 通知申請人需協調
+      // Rejected or timed out — notify submitter to coordinate and resubmit
       console.log(`❌ Request ${requestId} rejected or timed out`);
       
       const declined = Object.entries(current).filter(([_, v]) => v === "declined").map(([u]) => `<@${u}>`);
@@ -771,7 +766,7 @@ Please coordinate and submit again if needed. Thank you!`
  <@${submitter}> Please kindly coordinate and resubmit if needed. Thank you!`
       });
 
-      // 記錄到 spreadsheet
+      // Log the rejected request to Google Sheets
       await logToSheet({
         requestId,
         robotModel: record.robotModel,
@@ -795,6 +790,8 @@ Please coordinate and submit again if needed. Thank you!`
   }
 }
 
+// Returns a map of { userId: displayName } for the given list of user IDs.
+// Falls back to the raw user ID if the API call fails.
 async function getUsernamesFromIds(userIds, client) {
   const nameMap = {};
   for (const userId of userIds) {
@@ -803,7 +800,7 @@ async function getUsernamesFromIds(userIds, client) {
       nameMap[userId] = res.user.profile.display_name || res.user.real_name || userId;
     } catch (err) {
       console.error(`❌ Failed to get name for ${userId}:`, err);
-      nameMap[userId] = userId; // fallback
+      nameMap[userId] = userId;
     }
   }
   return nameMap;
@@ -814,5 +811,3 @@ async function getUsernamesFromIds(userIds, client) {
   console.log("⚡️ Slack Bot is running");
   console.log("🛰️ Running from Render at " + new Date());
 })();
-
-// 250713 MVP1.0 finished
