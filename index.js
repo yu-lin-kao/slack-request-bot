@@ -238,15 +238,13 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
   const why = vals.why.value.value;
 
   const hrToMs = hr => hr * 60 * 60 * 1000;
-  const reminderDelayMs   = vals.reminder_delay?.value?.selected_option
-    ? hrToMs(parseFloat(vals.reminder_delay.value.selected_option.value))
-    : config.REMINDER_DELAY_MS;
-  const noResponseDelayMs = vals.no_response_delay?.value?.selected_option
-    ? hrToMs(parseFloat(vals.no_response_delay.value.selected_option.value))
-    : config.NO_RESPONSE_DELAY_MS;
-  const docUpdateReminderMs = vals.doc_update_reminder?.value?.selected_option
-    ? hrToMs(parseFloat(vals.doc_update_reminder.value.selected_option.value))
-    : config.DOC_UPDATE_REMINDER_MS;
+  const parseHrInput = (raw, fallback) => {
+    const hr = parseFloat(raw);
+    return (raw && !isNaN(hr) && hr > 0) ? hrToMs(hr) : fallback;
+  };
+  const reminderDelayMs     = parseHrInput(vals.reminder_delay?.value?.value,     config.REMINDER_DELAY_MS);
+  const noResponseDelayMs   = parseHrInput(vals.no_response_delay?.value?.value,  config.NO_RESPONSE_DELAY_MS);
+  const docUpdateReminderMs = parseHrInput(vals.doc_update_reminder?.value?.value, config.DOC_UPDATE_REMINDER_MS);
 
   // ❗ 驗證 Robot Model 是否有值
   if (!robotModel) {
