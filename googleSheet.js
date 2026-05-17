@@ -1,8 +1,9 @@
 const fs = require("fs");
 const { google } = require("googleapis");
 const { DateTime } = require("luxon");
+const config = require("./config");
 
-const path = process.env.CREDENTIALS_JSON || "/etc/secrets/CREDENTIALS_JSON";
+const path = config.GOOGLE_CREDENTIALS_PATH;
 
 if (!fs.existsSync(path)) {
   console.error("❌ CREDENTIALS_JSON file not found at", path);
@@ -17,8 +18,8 @@ const auth = new google.auth.GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
-const SPREADSHEET_ID = "1JR0r4esk6C8Z4uqah3lIabdIEViZdqQNzf457lMADjw";
-const SHEET_NAME = "Sheet1";
+const SPREADSHEET_ID = config.SPREADSHEET_ID;
+const SHEET_NAME = config.SHEET_NAME;
 
 let cachedRowMap = {}; // { requestId: rowIndex }
 
@@ -42,7 +43,7 @@ async function logToSheet({
 
   if (cachedRowMap[requestId]) {
     const rowIndex = cachedRowMap[requestId];
-    const updateRange = `${SHEET_NAME}!M${rowIndex + 1}`;
+    const updateRange = `${SHEET_NAME}!${config.STATUS_COLUMN}${rowIndex + 1}`;
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: updateRange,
@@ -70,7 +71,7 @@ async function logToSheet({
 
   if (foundRow) {
     cachedRowMap[requestId] = foundRow;
-    const updateRange = `${SHEET_NAME}!M${foundRow}`;
+    const updateRange = `${SHEET_NAME}!${config.STATUS_COLUMN}${foundRow}`;
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: updateRange,
@@ -79,7 +80,7 @@ async function logToSheet({
     });
     console.log(`🔄 Status updated for existing requestId in row ${foundRow}`);
   } else {
-    const date = DateTime.now().setZone("America/Chicago").toFormat("yyyy-MM-dd HH:mm:ss");
+    const date = DateTime.now().setZone(config.TIMEZONE).toFormat("yyyy-MM-dd HH:mm:ss");
     const row = [
       requestId,
       robotModel,
