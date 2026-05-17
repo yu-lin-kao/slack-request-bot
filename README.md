@@ -1,9 +1,14 @@
-# slack-change-request o/
+# slack-change-request
 
-Hello~! This is **Request Bot**, a Slack app that manages requests through an approval workflow — from submission to documentation confirmation o/
+Hello~! This is **Request Bot**, a Slack app that manages requests through an approval workflow from submission to documentation confirmation \o/
 
-**TL;DR:** A Slack shortcut (/Change Request) opens a modal → submitter fills in change details and picks approvers → approvers get DMs with Approve/Decline buttons → result is posted back to the channel and logged to Firestore + Google Sheets. Start with:
+**TL;DR:** 
+A Slack shortcut (/Change Request) opens a modal → 
+submitter fills in change details and picks approvers → 
+approvers get DMs with Approve/Decline buttons → 
+result is posted back to the channel and logged to Firestore + Google Sheets. 
 
+Start with:
 ```bash
 npm install
 node index.js
