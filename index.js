@@ -171,6 +171,65 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
             response_url_enabled: true
           },
           label: { type: "plain_text", text: "Which Slack channel should this discussion happen?" }
+        },
+        { type: "divider" },
+        {
+          type: "context",
+          elements: [{ type: "mrkdwn", text: ":bell: *Notification Timing* (optional — leave blank to use defaults)" }]
+        },
+        {
+          type: "input",
+          block_id: "reminder_delay",
+          optional: true,
+          element: {
+            type: "static_select",
+            action_id: "value",
+            initial_option: { text: { type: "plain_text", text: "24 hr" }, value: "24" },
+            options: [
+              { text: { type: "plain_text", text: "1 hr"  }, value: "1"  },
+              { text: { type: "plain_text", text: "6 hr"  }, value: "6"  },
+              { text: { type: "plain_text", text: "12 hr" }, value: "12" },
+              { text: { type: "plain_text", text: "24 hr" }, value: "24" },
+              { text: { type: "plain_text", text: "48 hr" }, value: "48" },
+            ]
+          },
+          label: { type: "plain_text", text: "Remind approvers after (default: 24 hr)" }
+        },
+        {
+          type: "input",
+          block_id: "no_response_delay",
+          optional: true,
+          element: {
+            type: "static_select",
+            action_id: "value",
+            initial_option: { text: { type: "plain_text", text: "48 hr" }, value: "48" },
+            options: [
+              { text: { type: "plain_text", text: "12 hr" }, value: "12" },
+              { text: { type: "plain_text", text: "24 hr" }, value: "24" },
+              { text: { type: "plain_text", text: "48 hr" }, value: "48" },
+              { text: { type: "plain_text", text: "72 hr" }, value: "72" },
+              { text: { type: "plain_text", text: "96 hr" }, value: "96" },
+            ]
+          },
+          label: { type: "plain_text", text: "Mark as no-response after (default: 48 hr)" }
+        },
+        {
+          type: "input",
+          block_id: "doc_update_reminder",
+          optional: true,
+          element: {
+            type: "static_select",
+            action_id: "value",
+            initial_option: { text: { type: "plain_text", text: "24 hr" }, value: "24" },
+            options: [
+              { text: { type: "plain_text", text: "1 hr"  }, value: "1"  },
+              { text: { type: "plain_text", text: "6 hr"  }, value: "6"  },
+              { text: { type: "plain_text", text: "12 hr" }, value: "12" },
+              { text: { type: "plain_text", text: "24 hr" }, value: "24" },
+              { text: { type: "plain_text", text: "48 hr" }, value: "48" },
+            ]
+          },
+          label: { type: "plain_text", text: "Remind submitter to update docs after (default: 24 hr)" }
         }
       ]
     }
@@ -198,6 +257,17 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
   const classification = vals.classification.value.selected_option.value;
   const content = vals.content.value.value;
   const why = vals.why.value.value;
+
+  const hrToMs = hr => hr * 60 * 60 * 1000;
+  const reminderDelayMs   = vals.reminder_delay?.value?.selected_option
+    ? hrToMs(parseFloat(vals.reminder_delay.value.selected_option.value))
+    : config.REMINDER_DELAY_MS;
+  const noResponseDelayMs = vals.no_response_delay?.value?.selected_option
+    ? hrToMs(parseFloat(vals.no_response_delay.value.selected_option.value))
+    : config.NO_RESPONSE_DELAY_MS;
+  const docUpdateReminderMs = vals.doc_update_reminder?.value?.selected_option
+    ? hrToMs(parseFloat(vals.doc_update_reminder.value.selected_option.value))
+    : config.DOC_UPDATE_REMINDER_MS;
 
   // ❗ 驗證 Robot Model 是否有值
   if (!robotModel) {
@@ -262,7 +332,7 @@ Result and updates will be recorded in this thread. Please also feel free to dis
 
 Please kindly approve or decline. If there's any further discussion or points you would like to raise, please feel free to reply in the channel thread. Thank you!!
 
-_Noted: A reminder will be sent after ${msToHuman(config.REMINDER_DELAY_MS)} and this will be mark as "no reponse" after ${msToHuman(config.NO_RESPONSE_DELAY_MS)} without actions._`
+_Noted: A reminder will be sent after ${msToHuman(reminderDelayMs)} and this will be mark as "no reponse" after ${msToHuman(noResponseDelayMs)} without actions._`
           }
         },
         {
@@ -303,7 +373,10 @@ _Noted: A reminder will be sent after ${msToHuman(config.REMINDER_DELAY_MS)} and
     content,
     why,
     docs,
-    thread_ts
+    thread_ts,
+    reminderDelayMs,
+    noResponseDelayMs,
+    docUpdateReminderMs
   };
 
   const dtChicago = DateTime.now().setZone(config.TIMEZONE);
@@ -348,14 +421,14 @@ _Noted: A reminder will be sent after ${msToHuman(config.REMINDER_DELAY_MS)} and
     } catch (err) {
       console.error("⚠️ Reminder task failed:", err);
     }
-  }, config.REMINDER_DELAY_MS);
+  }, reminderDelayMs);
 
-  // 🕒 設定 48 小時後自動標記 no response
+  // 🕒 設定後自動標記 no response
   setTimeout(async () => {
     try {
       const record = pendingApprovals[requestId];
       if (!record) return;
-      
+
       for (const userId of record.approvers) {
         if (!approvals[requestId]?.[userId]) {
           approvals[requestId] = approvals[requestId] || {};
@@ -366,12 +439,11 @@ _Noted: A reminder will be sent after ${msToHuman(config.REMINDER_DELAY_MS)} and
           const im = await client.conversations.open({ users: userId });
           await client.chat.postMessage({
             channel: im.channel.id,
-            text: `⚠️ Since you didn't respond to the request within ${msToHuman(config.NO_RESPONSE_DELAY_MS)}, it is now marked as *No Response*.`
+            text: `⚠️ Since you didn't respond to the request within ${msToHuman(noResponseDelayMs)}, it is now marked as *No Response*.`
           });
         }
       }
 
-      // ✅ 加這一行在最後：處理完所有 no_response 之後，判斷整體決策結果
       await checkFinalDecision(requestId, client);
       await updateStatusInFirestore(requestId, {
         approverStatus: record.approvers.map(uid => ({
@@ -382,9 +454,9 @@ _Noted: A reminder will be sent after ${msToHuman(config.REMINDER_DELAY_MS)} and
       });
 
     } catch (err) {
-      console.error(`❌ Error during ${msToHuman(config.NO_RESPONSE_DELAY_MS)} no response check:`, err);
+      console.error(`❌ Error during ${msToHuman(noResponseDelayMs)} no response check:`, err);
     }
-  }, config.NO_RESPONSE_DELAY_MS);
+  }, noResponseDelayMs);
 });
 
 
@@ -561,7 +633,9 @@ async function checkFinalDecision(requestId, client) {
     submitter,
     channel,
     thread_ts,
-    why
+    why,
+    noResponseDelayMs = config.NO_RESPONSE_DELAY_MS,
+    docUpdateReminderMs = config.DOC_UPDATE_REMINDER_MS
   } = record;
 
   // 1️⃣ 確認是否全部回應（包含 no_response）
@@ -670,7 +744,7 @@ You may now proceed with implementing the changes and updating the documentation
         } catch (err) {
           console.error(`❌ Doc update reminder failed for requestId ${requestId}:`, err);
         }
-      }, config.DOC_UPDATE_REMINDER_MS);
+      }, docUpdateReminderMs);
 
       // 記錄到 spreadsheet
       await logToSheet({
@@ -703,7 +777,7 @@ You may now proceed with implementing the changes and updating the documentation
         channel: im.channel.id,
         text: `Your change request was rejected ❌.
 
-Some deciders have declined or did not respond within ${msToHuman(config.NO_RESPONSE_DELAY_MS)}.
+Some deciders have declined or did not respond within ${msToHuman(noResponseDelayMs)}.
  •  *Declined:* ${declined.join(", ") || "None"}
  •  *No Response:* ${noResp.join(", ") || "None"}
 
