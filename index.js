@@ -3,6 +3,15 @@ const { DateTime } = require("luxon");
 const { App, ExpressReceiver } = require("@slack/bolt");
 const config = require("./config");
 
+function msToHuman(ms) {
+  const totalSeconds = Math.round(ms / 1000);
+  const totalMinutes = totalSeconds / 60;
+  const totalHours = totalMinutes / 60;
+  if (totalHours >= 1) return `${Number.isInteger(totalHours) ? totalHours : totalHours.toFixed(1)}hr`;
+  if (totalMinutes >= 1) return `${Number.isInteger(totalMinutes) ? totalMinutes : totalMinutes.toFixed(1)} min`;
+  return `${totalSeconds} sec`;
+}
+
 // ✅ 先定義 receiver
 const receiver = new ExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
@@ -196,7 +205,13 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
     return;
   }
 
-  const requestId = Date.now(); // 用於記錄審核狀態
+  // 過濾掉 bot 帳號（bot 無法收 DM，也無法點按鈕）
+  const { humans: humanApprovers, bots: botApprovers } = await filterBotUsers(approvers, client);
+  if (botApprovers.length > 0) {
+    console.warn(`⚠️ Bot users removed from approvers list: ${botApprovers.join(", ")}`);
+  }
+
+  const requestId = Date.now();
 
   // 1️⃣ 發 summary 到頻道（沒有按鈕）
   const posted = await client.chat.postMessage({
@@ -247,7 +262,7 @@ Result and updates will be recorded in this thread. Please also feel free to dis
 
 Please kindly approve or decline. If there's any further discussion or points you would like to raise, please feel free to reply in the channel thread. Thank you!!
 
-_Noted: A reminder will be sent after 24hr and this will be mark as "no reponse" after 48hr without actions._`
+_Noted: A reminder will be sent after ${msToHuman(config.REMINDER_DELAY_MS)} and this will be mark as "no reponse" after ${msToHuman(config.NO_RESPONSE_DELAY_MS)} without actions._`
           }
         },
         {
@@ -351,7 +366,7 @@ _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse"
           const im = await client.conversations.open({ users: userId });
           await client.chat.postMessage({
             channel: im.channel.id,
-            text: `⚠️ Since you didn't respond to the request within 48 hours, it is now marked as *No Response*.`
+            text: `⚠️ Since you didn't respond to the request within ${msToHuman(config.NO_RESPONSE_DELAY_MS)}, it is now marked as *No Response*.`
           });
         }
       }
@@ -367,7 +382,7 @@ _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse"
       });
 
     } catch (err) {
-      console.error("❌ Error during 48hr no response check:", err);
+      console.error(`❌ Error during ${msToHuman(config.NO_RESPONSE_DELAY_MS)} no response check:`, err);
     }
   }, config.NO_RESPONSE_DELAY_MS);
 });
@@ -688,7 +703,7 @@ You may now proceed with implementing the changes and updating the documentation
         channel: im.channel.id,
         text: `Your change request was rejected ❌.
 
-Some deciders have declined or did not respond within 48 hours.
+Some deciders have declined or did not respond within ${msToHuman(config.NO_RESPONSE_DELAY_MS)}.
  •  *Declined:* ${declined.join(", ") || "None"}
  •  *No Response:* ${noResp.join(", ") || "None"}
 
@@ -748,6 +763,25 @@ async function getUsernamesFromIds(userIds, client) {
     }
   }
   return nameMap;
+}
+
+async function filterBotUsers(userIds, client) {
+  const humans = [];
+  const bots = [];
+  for (const userId of userIds) {
+    try {
+      const res = await client.users.info({ user: userId });
+      if (res.user.is_bot) {
+        bots.push(userId);
+      } else {
+        humans.push(userId);
+      }
+    } catch (err) {
+      console.warn(`⚠️ Could not check if ${userId} is a bot, treating as human:`, err.message);
+      humans.push(userId);
+    }
+  }
+  return { humans, bots };
 }
 
 (async () => {

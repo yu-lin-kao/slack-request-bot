@@ -11,7 +11,7 @@ module.exports = {
   // ─── Timeouts (milliseconds) ──────────────────────────────
   REMINDER_DELAY_MS:          1000 * 60 * 0.5,  // remind approver (default: 24hr = 1000 * 60 * 60 * 24)
   NO_RESPONSE_DELAY_MS:       1000 * 60 * 1,  // auto mark no-response (default: 48hr = 1000 * 60 * 60 * 48)
-  DOC_UPDATE_REMINDER_MS:     1000 * 60 * 1,  // remind submitter to update docs (default: 24hr = 1000 * 60 * 60 * 24)
+  DOC_UPDATE_REMINDER_MS:     1000 * 60 * 0.5,  // remind submitter to update docs (default: 24hr = 1000 * 60 * 60 * 24)
 
   // ─── Form options ─────────────────────────────────────────
   ROBOT_MODELS: ["TPV", "TPr", "TMx", "TSP", "TS", "TEST", "Other"],
