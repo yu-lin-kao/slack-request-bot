@@ -21,12 +21,12 @@ const receiver = new ExpressReceiver({
 const appExpress = receiver.app;
 
 // ✅ 加入 Render ping 用的 endpoint
-appExpress.get("/", (req, res) => {
+appExpress.get("/", (_req, res) => {
   res.status(200).send("🛰️ Change Request Bot is running.");
 });
 
 // /healthcheck -> 給未來做準備
-appExpress.get("/healthcheck", (req, res) => {
+appExpress.get("/healthcheck", (_req, res) => {
   res.status(200).json({
     status: "ok",
     uptime: process.uptime(),
@@ -182,54 +182,33 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
           block_id: "reminder_delay",
           optional: true,
           element: {
-            type: "static_select",
+            type: "plain_text_input",
             action_id: "value",
-            initial_option: { text: { type: "plain_text", text: "24 hr" }, value: "24" },
-            options: [
-              { text: { type: "plain_text", text: "1 hr"  }, value: "1"  },
-              { text: { type: "plain_text", text: "6 hr"  }, value: "6"  },
-              { text: { type: "plain_text", text: "12 hr" }, value: "12" },
-              { text: { type: "plain_text", text: "24 hr" }, value: "24" },
-              { text: { type: "plain_text", text: "48 hr" }, value: "48" },
-            ]
+            placeholder: { type: "plain_text", text: "hours, e.g. 24 (default: 24)" }
           },
-          label: { type: "plain_text", text: "Remind approvers after (default: 24 hr)" }
+          label: { type: "plain_text", text: "Remind approvers after (hr)" }
         },
         {
           type: "input",
           block_id: "no_response_delay",
           optional: true,
           element: {
-            type: "static_select",
+            type: "plain_text_input",
             action_id: "value",
-            initial_option: { text: { type: "plain_text", text: "48 hr" }, value: "48" },
-            options: [
-              { text: { type: "plain_text", text: "12 hr" }, value: "12" },
-              { text: { type: "plain_text", text: "24 hr" }, value: "24" },
-              { text: { type: "plain_text", text: "48 hr" }, value: "48" },
-              { text: { type: "plain_text", text: "72 hr" }, value: "72" },
-              { text: { type: "plain_text", text: "96 hr" }, value: "96" },
-            ]
+            placeholder: { type: "plain_text", text: "hours, e.g. 48 (default: 48)" }
           },
-          label: { type: "plain_text", text: "Mark as no-response after (default: 48 hr)" }
+          label: { type: "plain_text", text: "Mark as no-response after (hr)" }
         },
         {
           type: "input",
           block_id: "doc_update_reminder",
           optional: true,
           element: {
-            type: "static_select",
+            type: "plain_text_input",
             action_id: "value",
-            initial_option: { text: { type: "plain_text", text: "24 hr" }, value: "24" },
-            options: [
-              { text: { type: "plain_text", text: "1 hr"  }, value: "1"  },
-              { text: { type: "plain_text", text: "6 hr"  }, value: "6"  },
-              { text: { type: "plain_text", text: "12 hr" }, value: "12" },
-              { text: { type: "plain_text", text: "24 hr" }, value: "24" },
-              { text: { type: "plain_text", text: "48 hr" }, value: "48" },
-            ]
+            placeholder: { type: "plain_text", text: "hours, e.g. 24 (default: 24)" }
           },
-          label: { type: "plain_text", text: "Remind submitter to update docs after (default: 24 hr)" }
+          label: { type: "plain_text", text: "Remind submitter to update docs after (hr)" }
         }
       ]
     }
@@ -273,12 +252,6 @@ app.view("change_request_submit", async ({ ack, view, client }) => {
   if (!robotModel) {
     console.error("Robot model is required but empty.");
     return;
-  }
-
-  // 過濾掉 bot 帳號（bot 無法收 DM，也無法點按鈕）
-  const { humans: humanApprovers, bots: botApprovers } = await filterBotUsers(approvers, client);
-  if (botApprovers.length > 0) {
-    console.warn(`⚠️ Bot users removed from approvers list: ${botApprovers.join(", ")}`);
   }
 
   const requestId = Date.now();
@@ -564,7 +537,7 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
 
   const dateConfirmed = DateTime.now().setZone(config.TIMEZONE).toFormat("yyyy-MM-dd");
 
-  const { robotModel, robotId, classification, content, why, docs, channel, inform, approvers } = record;
+  const { robotModel, robotId, classification, content, docs, inform, approvers } = record;
 
   if (pendingApprovals[requestId]) {
     pendingApprovals[requestId].docConfirmed = true;
@@ -633,7 +606,6 @@ async function checkFinalDecision(requestId, client) {
     submitter,
     channel,
     thread_ts,
-    why,
     noResponseDelayMs = config.NO_RESPONSE_DELAY_MS,
     docUpdateReminderMs = config.DOC_UPDATE_REMINDER_MS
   } = record;
@@ -837,25 +809,6 @@ async function getUsernamesFromIds(userIds, client) {
     }
   }
   return nameMap;
-}
-
-async function filterBotUsers(userIds, client) {
-  const humans = [];
-  const bots = [];
-  for (const userId of userIds) {
-    try {
-      const res = await client.users.info({ user: userId });
-      if (res.user.is_bot) {
-        bots.push(userId);
-      } else {
-        humans.push(userId);
-      }
-    } catch (err) {
-      console.warn(`⚠️ Could not check if ${userId} is a bot, treating as human:`, err.message);
-      humans.push(userId);
-    }
-  }
-  return { humans, bots };
 }
 
 (async () => {
