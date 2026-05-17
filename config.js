@@ -9,12 +9,12 @@ module.exports = {
   SLACK_WORKSPACE_URL: "https://earthsense.slack.com",
 
   // ─── Timeouts (milliseconds) ──────────────────────────────
-  REMINDER_DELAY_MS:          1000 * 60 * 1,  // remind approver (default: 24hr = 1000 * 60 * 60 * 24)
-  NO_RESPONSE_DELAY_MS:       1000 * 60 * 2,  // auto mark no-response (default: 48hr = 1000 * 60 * 60 * 48)
-  DOC_UPDATE_REMINDER_MS:     1000 * 60 * 0.5,  // remind submitter to update docs (default: 24hr = 1000 * 60 * 60 * 24)
+  REMINDER_DELAY_MS:          1000 * 60 * 60 * 24,  // remind approver (default: 24hr = 1000 * 60 * 60 * 24)
+  NO_RESPONSE_DELAY_MS:       1000 * 60 * 60 * 48,  // auto mark no-response (default: 48hr = 1000 * 60 * 60 * 48)
+  DOC_UPDATE_REMINDER_MS:     1000 * 60 * 60 * 24,  // remind submitter to update docs (default: 24hr = 1000 * 60 * 60 * 24)
 
   // ─── Form options ─────────────────────────────────────────
-  ROBOT_MODELS: ["TPV", "TPr", "TMx", "TSP", "TS", "TEST", "Other"],
+  ROBOT_MODELS: ["TPV", "TPr", "TMx", "TSP", "TS", "Other"],
   CLASSIFICATIONS: ["Scope", "Design-Mech", "Design-Elec", "Integration", "Software", "Timeline", "Other"],
 
   // ─── Google Sheets ────────────────────────────────────────
