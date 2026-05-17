@@ -1,6 +1,7 @@
 require("dotenv").config();
 const { DateTime } = require("luxon");
 const { App, ExpressReceiver } = require("@slack/bolt");
+const config = require("./config");
 
 // ✅ 先定義 receiver
 const receiver = new ExpressReceiver({
@@ -61,14 +62,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
           element: {
             type: "multi_static_select",
             action_id: "value",
-            options: [
-              { text: { type: "plain_text", text: "TPV" }, value: "TPV" },
-              { text: { type: "plain_text", text: "TPr" }, value: "TPr" },
-              { text: { type: "plain_text", text: "TMx" }, value: "TMx" },
-              { text: { type: "plain_text", text: "TSP" }, value: "TSP" },
-              { text: { type: "plain_text", text: "TS" }, value: "TS" },
-              { text: { type: "plain_text", text: "Other" }, value: "Other" }
-            ]
+            options: config.ROBOT_MODELS.map(m => ({ text: { type: "plain_text", text: m }, value: m }))
           },
           label: { type: "plain_text", text: "Robot model" },
         },
@@ -90,14 +84,7 @@ app.shortcut("new_change_request", async ({ shortcut, ack, client }) => {
           element: {
             type: "static_select",
             action_id: "value",
-            options: [
-              { text: { type: "plain_text", text: "Scope" }, value: "Scope" },
-              { text: { type: "plain_text", text: "Design-Mech" }, value: "Design-Mech" },
-              { text: { type: "plain_text", text: "Design-Elec" }, value: "Design-Elec" },
-              { text: { type: "plain_text", text: "Integration" }, value: "Integration" },
-              { text: { type: "plain_text", text: "Software" }, value: "Software" },
-              { text: { type: "plain_text", text: "Other" }, value: "Other" }
-            ]
+            options: config.CLASSIFICATIONS.map(c => ({ text: { type: "plain_text", text: c }, value: c }))
           },
           label: { type: "plain_text", text: "Change Classification" },
         },
@@ -237,8 +224,6 @@ Result and updates will be recorded in this thread. Please also feel free to dis
   });
 
   const thread_ts = posted.ts;
-  console.log("📌 [checkFinalDecision] Approvers should be:", approvers);
-  console.log("📌 [checkFinalDecision] approvals[requestId] =", approvals[requestId]);
 
 
   // 2️⃣ 發審核通知給每位 approver（含按鈕）
@@ -306,7 +291,7 @@ _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse"
     thread_ts
   };
 
-  const dtChicago = DateTime.now().setZone("America/Chicago");
+  const dtChicago = DateTime.now().setZone(config.TIMEZONE);
 
   // 🔥 Firestore 紀錄初始狀態
   await saveRequestToFirestore(requestId, {
@@ -348,7 +333,7 @@ _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse"
     } catch (err) {
       console.error("⚠️ Reminder task failed:", err);
     }
-  }, 1000 * 60 * 60 * 24); // <-- 開發測試用 1000 * 60 * 0.5，正式版請設為 1000 * 60 * 60 * 24
+  }, config.REMINDER_DELAY_MS);
 
   // 🕒 設定 48 小時後自動標記 no response
   setTimeout(async () => {
@@ -377,14 +362,14 @@ _Noted: A reminder will be sent after 24hr and this will be mark as "no reponse"
         approverStatus: record.approvers.map(uid => ({
           uid,
           decision: approvals[requestId][uid] || 'no_response',
-          updatedAt: DateTime.now().setZone("America/Chicago").toISO()
+          updatedAt: DateTime.now().setZone(config.TIMEZONE).toISO()
         }))
       });
 
     } catch (err) {
       console.error("❌ Error during 48hr no response check:", err);
     }
-  }, 1000 * 60 * 60 * 48); // 測試用 1000 * 60 * 1，正式版請設為 1000 * 60 * 60 * 48
+  }, config.NO_RESPONSE_DELAY_MS);
 });
 
 
@@ -418,7 +403,7 @@ app.action(/^(approve_action|decline_action)$/, async ({ body, ack, action, clie
     approverStatus: approvers.map(uid => ({
       uid,
       decision: approvals[requestId][uid] || null,
-      updatedAt: DateTime.now().setZone("America/Chicago").toISO()
+      updatedAt: DateTime.now().setZone(config.TIMEZONE).toISO()
     }))
   });
   await checkFinalDecision(requestId, client);
@@ -490,7 +475,7 @@ app.action("confirm_docs_updated", async ({ ack, body, client, action }) => {
     return;
   }
 
-  const dateConfirmed = DateTime.now().setZone("America/Chicago").toFormat("yyyy-MM-dd");
+  const dateConfirmed = DateTime.now().setZone(config.TIMEZONE).toFormat("yyyy-MM-dd");
 
   const { robotModel, robotId, classification, content, why, docs, channel, inform, approvers } = record;
 
@@ -670,7 +655,7 @@ You may now proceed with implementing the changes and updating the documentation
         } catch (err) {
           console.error(`❌ Doc update reminder failed for requestId ${requestId}:`, err);
         }
-      }, 1000 * 60 * 60 * 24); // ⚠️ 測試用 1000 * 60 * 0.5，正式請用 1000 * 60 * 60 * 24
+      }, config.DOC_UPDATE_REMINDER_MS);
 
       // 記錄到 spreadsheet
       await logToSheet({
@@ -686,7 +671,7 @@ You may now proceed with implementing the changes and updating the documentation
         docs: record.docs,
         submitter: userNames[submitter] || submitter,
         status: " ✅ -> Pending Doc Update",
-        threadLink: `https://earthsense.slack.com/archives/${channel}/p${thread_ts.replace(".", "")}`
+        threadLink: `${config.SLACK_WORKSPACE_URL}/archives/${channel}/p${thread_ts.replace(".", "")}`
       });
 
       console.log(`✅ Request ${requestId} logged to spreadsheet as approved`);
@@ -741,7 +726,7 @@ Please coordinate and submit again if needed. Thank you!`
         docs: record.docs,
         submitter: userNames[submitter] || submitter,
         status: " ❌ Needs Resubmission",
-        threadLink: `https://earthsense.slack.com/archives/${channel}/p${thread_ts.replace(".", "")}`
+        threadLink: `${config.SLACK_WORKSPACE_URL}/archives/${channel}/p${thread_ts.replace(".", "")}`
       });
 
       console.log(`❌ Request ${requestId} logged to spreadsheet as rejected`);
@@ -766,7 +751,7 @@ async function getUsernamesFromIds(userIds, client) {
 }
 
 (async () => {
-  await app.start(3000);
+  await app.start(config.PORT);
   console.log("⚡️ Slack Bot is running");
   console.log("🛰️ Running from Render at " + new Date());
 })();
