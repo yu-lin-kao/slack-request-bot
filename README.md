@@ -328,7 +328,26 @@ That's it. UptimeRobot is no longer needed.
 ## 7. Known Limitations & Future Improvements
 This app is currently an MVP for Slack-based change request submission, approval, notification, and logging.
 
-Known limitations:
+### Known Bugs & Risks
+
+1. **Null dereference in `confirm_docs_updated` ([index.js:515](index.js#L515))**  
+   `record.docConfirmed` is accessed before the `if (!record)` null check on line 524.  
+   If the server restarts after all approvers approve but before the submitter clicks "Confirm Documentation Updated", `pendingApprovals[requestId]` is empty and the handler throws a `TypeError`, leaving the submitter with no feedback and the request stuck in Firestore.  
+   **Fix**: move the `if (!record)` guard above line 515.
+
+2. **In-memory state lost on server restart ([index.js:219](index.js#L219), [434](index.js#L434))**  
+   `pendingApprovals`, `approvals`, and `finalizedRequests` all live in memory. After a restart (Render sleep, PM2 restart, crash), all active `setTimeout` reminders and no-response timers are gone. Affected requests stay permanently in Firestore as `🕒 Pending Approval` with no timer to resolve them.  
+   **Fix**: restore active timers from Firestore on startup, or replace `setTimeout` with a persistent job queue.
+
+3. **No try/catch in `app.view` handler ([index.js:221](index.js#L221))**  
+   If any Slack API call or Firestore write fails mid-submission (e.g. bot not in channel, network blip), the handler throws and leaves data in an inconsistent state — some approvers may be notified, others not, while the record may or may not be in Firestore.  
+   **Fix**: wrap the entire handler body in try/catch and send an ephemeral error message to the submitter on failure.
+
+4. **`requestId` collision risk ([index.js:254](index.js#L254))**  
+   `requestId = Date.now()` will produce duplicate IDs if two requests are submitted within the same millisecond. The second submission would silently overwrite the first in Firestore and in `pendingApprovals`.  
+   **Fix**: use `crypto.randomUUID()` or append a random suffix.
+
+### Known limitations:
 
 1. **Render Free Plan may sleep**  
    If the app is idle for a while, Slack interactions may timeout before Render wakes up.
@@ -351,7 +370,7 @@ Known limitations:
 7. **Change Content currently supports text/link input only**  
    Slack modal does not directly support image upload inside the form.
 
-Future improvements:
+### Future improvements:
 - Move workflow state fully into Firestore.
 - Replace long `setTimeout()` reminders with scheduled jobs.
 - Improve Google Sheet update logic.
