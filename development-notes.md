@@ -2,30 +2,20 @@
 
 This file records the main technical issues, bugs, and lessons learned while building the Slack Change Request Bot.
 
-## 1. Render / Deployment
+## 1. Deployment
 
-### Render Free Plan Sleep
+### Render Free Plan Sleep (original, now resolved)
 
 Render Free Plan may sleep after inactivity.  
 When Slack triggers a shortcut, modal, or button action after the app has been idle, the service may not wake up fast enough and Slack may timeout.
 
-Current workaround:
+The original workaround was an UptimeRobot ping to keep the service awake. This caused usage to exceed the free plan limits.
 
-```js
-appExpress.get("/", (_req, res) => {
-  res.status(200).send("🛰️ Change Request Bot is running.");
-});
-```
+**Current deployment: NUC (Ubuntu) + PM2 + ngrok**
 
-An external ping service such as UptimeRobot can periodically ping:
+The bot now runs on an always-on NUC via PM2, exposed through a fixed ngrok static domain. No sleep, no UptimeRobot needed.
 
-```txt
-https://slack-request-bot.onrender.com/
-```
-
-Lesson learned:
-
-Use Render Free Plan only for MVP/testing. For production use, use an always-on service or paid deployment plan.
+See [README Section 6](README.md#6-nuc-deployment-ubuntu--pm2--ngrok) for setup steps.
 
 ---
 
@@ -293,10 +283,8 @@ const finalizedRequests = new Set();
 
 This may be lost after:
 
-- Render restart
-- redeploy
-- crash
-- service sleep
+- server restart or crash
+- PM2 process restart
 
 Affected workflow data:
 
@@ -393,10 +381,19 @@ Environment variable style:
 const credentials = JSON.parse(process.env.CREDENTIALS_JSON);
 ```
 
+Local file via env var (NUC deployment):
+
+```js
+// .env
+CREDENTIALS_JSON=/home/youruser/slack-change-request/es-project-management-workflow-20e1d056ff1e.json
+
+// config.js resolves the path
+GOOGLE_CREDENTIALS_PATH: process.env.CREDENTIALS_JSON || "/etc/secrets/CREDENTIALS_JSON"
+```
+
 Lesson learned:
 
-Google credentials should be handled carefully through Render secret files or environment variables.  
-Service account JSON files should never be committed.
+Service account JSON files should never be committed. On Render, inject via Secret Files. On NUC, store the files locally and point to them via `.env`. Either way, `config.js` centralizes the path resolution.
 
 ---
 
@@ -493,11 +490,11 @@ GitHub Push Protection is helpful. Do not bypass it unless the secret has been p
 
 ## 16. Local, GitHub, and Render Versions Can Differ
 
-One confusing issue was that Render logs pointed to code that did not match the local file.
+One confusing issue was that logs pointed to code that did not match the local file.
 
 Root cause:
 
-The local code, GitHub remote branch, and Render deployed commit were not the same.
+The local code, GitHub remote branch, and the deployed version were not the same.
 
 Debug checklist:
 
@@ -507,11 +504,12 @@ git log --oneline -5
 git remote -v
 ```
 
-Also check the commit SHA shown in Render deploy logs.
+On Render: check the commit SHA shown in Render deploy logs.  
+On NUC: check which branch is checked out in the deployment directory.
 
 Lesson learned:
 
-Before debugging code, confirm which version is actually deployed.
+Before debugging code, confirm which version is actually running.
 
 ---
 
@@ -522,7 +520,7 @@ This app looks small, but it connects many systems:
 - Slack App settings
 - Slack Block Kit
 - OAuth scopes
-- Render deployment
+- NUC deployment (PM2 + ngrok)
 - environment variables
 - Google credentials
 - Firestore
@@ -535,8 +533,8 @@ Useful debugging order:
 
 ```txt
 1. Check the Slack error message
-2. Check Render runtime logs
-3. Check the deployed commit
+2. Check runtime logs (Render dashboard or `pm2 logs` on NUC)
+3. Check the deployed commit / branch
 4. Check local Git status
 5. Check Slack App settings and scopes
 6. Check environment variables / secret files

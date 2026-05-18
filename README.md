@@ -1,9 +1,8 @@
 # slack-change-request
 
-Hello~! This is **Request Bot**, a Slack app that manages requests through an approval workflow from submission to documentation confirmation \o/
+Hello~! This is **Request Bot**, a Slack app that manages requests through an approval workflow — from submission to documentation confirmation \o/
 
-**TL;DR:** 
-A Slack shortcut (/Change Request) opens a modal → 
+**TL;DR:** A Slack shortcut (/Change Request) opens a modal →
 submitter fills in change details and picks approvers → 
 approvers get DMs with Approve/Decline buttons → 
 result is posted back to the channel and logged to Firestore + Google Sheets. 
@@ -17,8 +16,8 @@ node index.js
 The bot listens on port `3000`. All configurable values (timeouts, options, spreadsheet ID, etc.) live in `config.js`.
 
 **Deployment options:**
+- **NUC** (current): self-hosted on a 24hr Linux machine via PM2 + ngrok — no sleep, no usage limits
 - **Render** (original): cloud-hosted, requires UptimeRobot to keep the free tier awake
-- **NUC** (recommended): self-hosted on a 24hr Linux machine via PM2 + Tailscale Funnel — no sleep, no usage limits
 
 ---
 
@@ -237,9 +236,11 @@ git push origin main
 
 ---
 
-## 6. NUC Deployment (Ubuntu + PM2 + Tailscale)
+## 6. NUC Deployment (Ubuntu + PM2 + ngrok)
 
 This is the recommended alternative to Render — no usage limits, no cold starts, no UptimeRobot needed.
+
+The public URL is provided by **ngrok's free static domain** — fixed forever, no domain purchase required.
 
 ### Prerequisites
 
@@ -247,6 +248,7 @@ This is the recommended alternative to Render — no usage limits, no cold start
 - Node.js 18+ installed
 - The repo cloned to the NUC (e.g. `~/slack-change-request`)
 - Secret JSON files placed in the repo directory (already present in the repo)
+- A free ngrok account with a static domain claimed at [dashboard.ngrok.com](https://dashboard.ngrok.com) → **Cloud Edge → Domains**
 
 ### Step 1 — Set up `.env`
 
@@ -257,12 +259,16 @@ cp .env.example .env
 nano .env
 ```
 
-Set `FIREBASE_SERVICE_ACCOUNT_JSON` and `CREDENTIALS_JSON` to the **absolute paths** of the JSON files on the NUC, e.g.:
+Fill in all four values:
 
 ```
-FIREBASE_SERVICE_ACCOUNT_JSON=/home/youruser/slack-change-request/es-request-bot-firebase-adminsdk-fbsvc-955425f097.json
-CREDENTIALS_JSON=/home/youruser/slack-change-request/es-project-management-workflow-20e1d056ff1e.json
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_SIGNING_SECRET=...
+FIREBASE_SERVICE_ACCOUNT_JSON=/home/.../slack-change-request/es-request-bot-firebase-adminsdk-fbsvc-955425f097.json
+CREDENTIALS_JSON=/home/.../slack-change-request/es-project-management-workflow-20e1d056ff1e.json
 ```
+
+`SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` can be found in [api.slack.com/apps](https://api.slack.com/apps) → your app → **OAuth & Permissions** and **Basic Information**. Set the path values to the **absolute paths** of the JSON files on the NUC.
 
 ### Step 2 — Install and start with PM2
 
@@ -287,31 +293,38 @@ pm2 restart slack-change-request
 pm2 stop slack-change-request
 ```
 
-### Step 3 — Expose the bot via Tailscale Funnel
-
-Tailscale Funnel gives the bot a **fixed public HTTPS URL** without needing a domain or port forwarding.
+### Step 3 — Expose the bot via ngrok static domain
 
 ```bash
-# Install Tailscale
-curl -fsSL https://tailscale.com/install.sh | sh
-sudo tailscale up
+# Install ngrok
+curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+sudo apt update && sudo apt install ngrok
 
-# Enable Funnel for port 3000
-sudo tailscale funnel 3000
+# Authenticate (token from dashboard.ngrok.com)
+ngrok config add-authtoken <YOUR_AUTHTOKEN>
+
+# Start tunnel with your fixed static domain
+ngrok http --url=evelyn-nebulose-interpervasively.ngrok-free.dev 3000
 ```
 
-Your fixed URL will be something like:
+Currently our URL is fixed at:
 ```
-https://your-nuc-name.tailXXXX.ts.net
+https://evelyn-nebulose-interpervasively.ngrok-free.dev
 ```
 
-This URL does **not change** as long as the machine name stays the same.
+To keep ngrok running alongside PM2 on reboot, add it as a second PM2 process:
+
+```bash
+pm2 start "ngrok http --url=evelyn-nebulose-interpervasively.ngrok-free.dev 3000" --name ngrok-tunnel
+pm2 save
+```
 
 ### Step 4 — Update Slack App settings
 
 In [api.slack.com/apps](https://api.slack.com/apps) → your app → **Interactivity & Shortcuts**:
 
-- Set **Request URL** to `https://your-nuc-name.tailXXXX.ts.net/slack/events`
+- Set **Request URL** to `https://evelyn-nebulose-interpervasively.ngrok-free.dev/slack/events`
 
 That's it. UptimeRobot is no longer needed.
 
