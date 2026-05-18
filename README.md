@@ -38,10 +38,8 @@ The bot listens on port `3000`. All configurable values (timeouts, options, spre
 
 ### Before running...
 
-- **Node.js 18+** recommended
 - Install dependencies: `npm install`
 - A `.env` file (or Render environment variables) must contain:
-
 ```
 SLACK_BOT_TOKEN=xoxb-...
 SLACK_SIGNING_SECRET=...
@@ -79,6 +77,7 @@ slack-change-request/
 ├─ firestoreLog.js       # Firestore read/write helpers
 ├─ googleSheet.js        # Google Sheets append/update logic
 ├─ config.js             # All configurable values in one place
+├─ ecosystem.config.js   # For NUC set up
 ├─ .env                  # Local environment variables (not committed)
 ├─ package.json
 └─ README.md
@@ -173,7 +172,7 @@ User triggers shortcut
 
 ## 3. Configuration
 
-Everything you'd ever want to tweak is in `config.js`. No need to dig through the logic code.
+Everything you'd want to tweak is in `config.js`. No need to dig through the logic code~
 
 > When testing with short timeouts (e.g. `1000 * 60 * 0.5` = 30 sec), the bot's DM messages will automatically reflect the actual time — so you'll see "30 sec" instead of "24hr". No need to edit message strings manually.
 
@@ -183,7 +182,7 @@ Everything you'd ever want to tweak is in `config.js`. No need to dig through th
 
 ## 4. Approval Workflow
 
-### Happy path
+### Approval path
 1. User triggers `new_change_request` shortcut
 2. Fills out the modal (robot model, classification, content, why, approvers, channel, optional timing)
 3. Summary is posted to the selected channel
@@ -305,12 +304,8 @@ sudo apt update && sudo apt install ngrok
 ngrok config add-authtoken <YOUR_AUTHTOKEN>
 
 # Start tunnel with your fixed static domain
+# Currently our URL is fixed at: https://evelyn-nebulose-interpervasively.ngrok-free.dev
 ngrok http --url=evelyn-nebulose-interpervasively.ngrok-free.dev 3000
-```
-
-Currently our URL is fixed at:
-```
-https://evelyn-nebulose-interpervasively.ngrok-free.dev
 ```
 
 To keep ngrok running alongside PM2 on reboot, add it as a second PM2 process:
@@ -376,5 +371,4 @@ Detailed notes are documented here:
 
 ---
 
-End of README, time to receive the requests! May your requests be awared and approved, and all the decisions be properly dealt with and documentated qwq
-If you spot a bug or have ideas, drop a message in #topic-automation — this little bot is always happy to become better o/
+End of README, time to receive the requests! May your requests be awared and approved, and all the decisions be properly dealt with and documentated qvq If you spot a bug or have ideas, drop a message in #topic-automation — this little bot is always happy to become better o/
