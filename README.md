@@ -14,7 +14,11 @@ npm install
 node index.js
 ```
 
-The bot is deployed on **Render** + **UptimeRobot** and listens on port `3000`. All configurable values (timeouts, options, spreadsheet ID, etc.) live in `config.js`.
+The bot listens on port `3000`. All configurable values (timeouts, options, spreadsheet ID, etc.) live in `config.js`.
+
+**Deployment options:**
+- **Render** (original): cloud-hosted, requires UptimeRobot to keep the free tier awake
+- **NUC** (recommended): self-hosted on a 24hr Linux machine via PM2 + Tailscale Funnel — no sleep, no usage limits
 
 ---
 
@@ -25,8 +29,9 @@ The bot is deployed on **Render** + **UptimeRobot** and listens on port `3000`. 
 3. [Configuration](#3-configuration)
 4. [Approval Workflow](#4-approval-workflow)
 5. [Render Operations](#5-render-operations)
-6. [Known Limitations & Future Improvements](#6-known-limitations--future-improvements)
-7. [Experience for references qwq](#7-experience-for-references-qwq)
+6. [NUC Deployment (Ubuntu + PM2 + Tailscale)](#6-nuc-deployment-ubuntu--pm2--tailscale)
+7. [Known Limitations & Future Improvements](#7-known-limitations--future-improvements)
+8. [Experience for references qwq](#8-experience-for-references-qwq)
 
 ---
 
@@ -232,7 +237,87 @@ git push origin main
 
 ---
 
-## 6. Known Limitations & Future Improvements
+## 6. NUC Deployment (Ubuntu + PM2 + Tailscale)
+
+This is the recommended alternative to Render — no usage limits, no cold starts, no UptimeRobot needed.
+
+### Prerequisites
+
+- Ubuntu NUC running 24/7
+- Node.js 18+ installed
+- The repo cloned to the NUC (e.g. `~/slack-change-request`)
+- Secret JSON files placed in the repo directory (already present in the repo)
+
+### Step 1 — Set up `.env`
+
+Copy `.env.example` to `.env` and fill in the values:
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Set `FIREBASE_SERVICE_ACCOUNT_JSON` and `CREDENTIALS_JSON` to the **absolute paths** of the JSON files on the NUC, e.g.:
+
+```
+FIREBASE_SERVICE_ACCOUNT_JSON=/home/youruser/slack-change-request/es-request-bot-firebase-adminsdk-fbsvc-955425f097.json
+CREDENTIALS_JSON=/home/youruser/slack-change-request/es-project-management-workflow-20e1d056ff1e.json
+```
+
+### Step 2 — Install and start with PM2
+
+```bash
+npm install
+npm install -g pm2
+
+# Start the bot
+pm2 start ecosystem.config.js
+
+# Save state so it auto-starts after reboot
+pm2 save
+pm2 startup   # follow the printed command to register the systemd service
+```
+
+Useful PM2 commands:
+
+```bash
+pm2 logs slack-change-request   # tail logs
+pm2 status                       # check if running
+pm2 restart slack-change-request
+pm2 stop slack-change-request
+```
+
+### Step 3 — Expose the bot via Tailscale Funnel
+
+Tailscale Funnel gives the bot a **fixed public HTTPS URL** without needing a domain or port forwarding.
+
+```bash
+# Install Tailscale
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+
+# Enable Funnel for port 3000
+sudo tailscale funnel 3000
+```
+
+Your fixed URL will be something like:
+```
+https://your-nuc-name.tailXXXX.ts.net
+```
+
+This URL does **not change** as long as the machine name stays the same.
+
+### Step 4 — Update Slack App settings
+
+In [api.slack.com/apps](https://api.slack.com/apps) → your app → **Interactivity & Shortcuts**:
+
+- Set **Request URL** to `https://your-nuc-name.tailXXXX.ts.net/slack/events`
+
+That's it. UptimeRobot is no longer needed.
+
+---
+
+## 7. Known Limitations & Future Improvements
 This app is currently an MVP for Slack-based change request submission, approval, notification, and logging.
 
 Known limitations:
@@ -269,7 +354,7 @@ Future improvements:
 
 --- 
 
-## 7. Experience for References qwq
+## 8. Experience for References qwq
 
 During development, this app ran into several practical integration issues across Slack, Render, Firestore, Google Sheets, and GitHub.
 
